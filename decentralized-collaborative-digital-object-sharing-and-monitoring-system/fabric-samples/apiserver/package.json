@@ -1,0 +1,15 @@
+{
+  "name": "apiserver",
+  "version": "1.0.0",
+  "description": "decentralized collaborative digital object sharing and monitoring system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fabric-ca-client": "^2.2.15",
+    "fabric-network": "^2.2.15"
+  }
+}

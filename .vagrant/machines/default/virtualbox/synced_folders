@@ -1,0 +1,1 @@
+{"virtualbox":{"/home/vagrant/fabric":{"guestpath":"/home/vagrant/fabric","hostpath":"/Users/dominik/Development/UvA/Master_Thesis/thesis_project","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/dominik/Development/UvA/Master_Thesis/thesis_project","disabled":false,"__vagrantfile":true}}}
