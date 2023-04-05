@@ -12,9 +12,14 @@ export class ButtonExtension
     context: DocumentRegistry.IContext<INotebookModel>
   ): IDisposable {
     // Create the toolbar button
+    // const mybutton = new ToolbarButton({
+    //   label: 'Share Notebook',
+    //   onClick: () => this.get_notebook()
+    // });
+
     const mybutton = new ToolbarButton({
       label: 'Share Notebook',
-      onClick: () => this.get_notebook()
+      onClick: () => this.get_notebook(context)
     });
 
     // Add the toolbar button to the notebook toolbar
@@ -25,15 +30,47 @@ export class ButtonExtension
     return mybutton;
   }
 
-  get_notebook(): void {
-    // This is an example API call to the server extension associated with
-    // this jupyterlab extension. It uses the generated handler.ts utility
-    const url = window.location.href;
-    const lastSegment = url.split('/').pop();
-    requestAPI<any>(`/api/contents/${lastSegment}`)
+  // get_notebook(): void {
+  //   // This is an example API call to the server extension associated with
+  //   // this jupyterlab extension. It uses the generated handler.ts utility
+  //   const url = window.location.href;
+  //   const lastSegment = url.split('/').pop();
+  //   requestAPI<any>(`/api/contents/${lastSegment}`)
+  //     .then(data => {
+  //       this.send_data(data);
+  //       // console.log('tu');
+  //       // console.log(data);
+  //     })
+  //     .catch(reason => {
+  //       console.error(
+  //         `The tutorial_extension server extension appears to be missing.\n${reason}`
+  //       );
+  //     });
+  // }
+
+  // get_notebook(): void {
+  //   const path = window.location.pathname.split('/');
+  //   const lastSegment = path.pop();
+  //   const basePath = path.join('/');
+
+  //   requestAPI<any>(`${basePath}/api/contents/${lastSegment}`)
+  //     .then(data => {
+  //       this.send_data(data);
+  //     })
+  //     .catch(reason => {
+  //       console.error(
+  //         `The tutorial_extension server extension appears to be missing.\n${reason}`
+  //       );
+  //     });
+  // }
+
+  get_notebook(context: DocumentRegistry.IContext<INotebookModel>): void {
+    // Get the notebook path from the context object
+    const path = context.path;
+    console.log(path);
+    requestAPI<any>(`/api/contents/${path}`)
       .then(data => {
         this.send_data(data);
-        console.log(data);
       })
       .catch(reason => {
         console.error(
@@ -43,6 +80,7 @@ export class ButtonExtension
   }
 
   send_data(dataToSend: JSON): void {
+    console.log(dataToSend);
     fetch('http://localhost:3000/notebook', {
       body: JSON.stringify(dataToSend),
       method: 'POST',

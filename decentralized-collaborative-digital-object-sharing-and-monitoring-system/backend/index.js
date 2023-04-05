@@ -1,34 +1,31 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const { JWT_SECRET } = require("./util/config");
+const jwtMiddleware = require("./middlewares/jwtMiddleware");
+const app = express();
+const port = 3000;
 
-const app = express(); 
+
 
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
-// app.use(express.json());
 
-const posts = [{
-    username: 'Dominik',
-    title: 'Post 1'
-},
-    {
-        username: 'Jim',
-        title: 'Post 2'
-    }]
+// app.use((req, res, next) => {
+//   console.log("Request headers:", req.headers);
+//   next();
+// });
 
-app.get('/post', (req, res) =>{
 
-    res.json(posts)
-})
+app.set("secret", JWT_SECRET);
+app.use(jwtMiddleware);
 
-app.post('/notebook',(req, res) =>{ 
-    
-    console.log(req.body);
-    res.json(req.body);
-    // res.status(201).send('Notebook created');
-})
-const port = 3000;
 
-app.listen(port, () => console.log(`Server started on port ${port}`)); 
+const notebookRoutes = require("./routes/notebookRoutes");
+const authRoutes = require("./routes/authRoutes");
+
+app.use("/notebook", notebookRoutes);
+app.use("/auth", authRoutes);
+
+app.listen(port, () => console.log(`Server started on port ${port}`));

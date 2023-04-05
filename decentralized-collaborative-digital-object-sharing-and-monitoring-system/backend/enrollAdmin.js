@@ -9,8 +9,8 @@
 const { Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
-const { buildCAClient, enrollAdmin } = require('../../test-application/javascript/CAUtil.js');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const { buildCAClient, enrollAdmin } = require("./util/CAUtil.js");
+const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require("./util/AppUtil.js");
 
 const mspOrg1 = 'Org1MSP';
 const mspOrg2 = 'Org2MSP';
@@ -36,27 +36,8 @@ async function connectToOrg2CA() {
 
     await enrollAdmin(caOrg2Client, walletOrg2, mspOrg2);
 }
-async function main() {
-    if (process.argv[2] === undefined) {
-        console.log('Usage: node enrollAdmin.js Org');
-        process.exit(1);
-    }
 
-    const org = process.argv[2];
+exports.connectToOrg1CA = connectToOrg1CA;
+exports.connectToOrg2CA = connectToOrg2CA;
 
-    try {
-        if (org === 'Org1' || org === 'org1') {
-            await connectToOrg1CA();
-        } else if (org === 'Org2' || org === 'org2') {
-            await connectToOrg2CA();
-        } else {
-            console.log('Usage: node registerUser.js org userID');
-            console.log('Org must be Org1 or Org2');
-        }
-    } catch (error) {
-        console.error(`Error in enrolling admin: ${error}`);
-        process.exit(1);
-    }
-}
-
-main();
+// main();

@@ -4,60 +4,208 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-'use strict';
+"use strict";
 
-const { Wallets } = require('fabric-network');
-const FabricCAServices = require('fabric-ca-client');
-const path = require('path');
-const { buildCAClient, registerAndEnrollUser } = require('../../test-application/javascript/CAUtil.js');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const { Gateway, Wallets } = require("fabric-network");
+const FabricCAServices = require("fabric-ca-client");
+const path = require("path");
+const { buildCAClient, registerAndEnrollUser } = require("./util/CAUtil.js");
+const {
+  buildCCPOrg1,
+  buildCCPOrg2,
+  buildWallet,
+} = require("./util/AppUtil.js");
+const enrollAdmin = require("./enrollAdmin");
+const argon2 = require("argon2");
 
-const mspOrg1 = 'Org1MSP';
-const mspOrg2 = 'Org2MSP';
+const mspOrg1 = "Org1MSP";
+const mspOrg2 = "Org2MSP";
 
-async function connectToOrg1CA(UserID) {
-    console.log('\n--> Register and enrolling new user');
-    const ccpOrg1 = buildCCPOrg1();
-    const caOrg1Client = buildCAClient(FabricCAServices, ccpOrg1, 'ca.org1.example.com');
+async function connectToOrg1CA(
+  adminId,
+  username,
+  email,
+  password,
+  userType,
+  affiliation
+) {
+  console.log("\n--> Register and enrolling new user");
+  const ccpOrg1 = buildCCPOrg1();
+  const caOrg1Client = buildCAClient(
+    FabricCAServices,
+    ccpOrg1,
+    "ca.org1.example.com"
+  );
 
-    const walletPathOrg1 = path.join(__dirname, 'wallet/org1');
-    const walletOrg1 = await buildWallet(Wallets, walletPathOrg1);
+  const walletPathOrg1 = path.join(__dirname, "wallet/org1");
+  const walletOrg1 = await buildWallet(Wallets, walletPathOrg1);
 
-    await registerAndEnrollUser(caOrg1Client, walletOrg1, mspOrg1, UserID, 'org1.department1');
+  const identities = await walletOrg1.list();
+  console.log("Identities in walletOrg1:", identities);
+  const adminIdentity = await walletOrg1.get(adminId);
+  console.log("Admin user identity:", adminIdentity);
+
+  //  await listUsersInWallet(walletOrg1, mspOrg1);
+
+  await registerAndEnrollUser(
+    caOrg1Client,
+    walletOrg1,
+    mspOrg1,
+    username,
+    userType,
+    affiliation
+  );
+  await registerUserToLedger(
+    walletOrg1,
+    username,
+    mspOrg1,
+    {
+      username: username,
+      email: email,
+      password: password,
+    },
+    userType,
+    adminId
+  );
 }
 
-async function connectToOrg2CA(UserID) {
-    console.log('\n--> Register and enrolling new user');
-    const ccpOrg2 = buildCCPOrg2();
-    const caOrg2Client = buildCAClient(FabricCAServices, ccpOrg2, 'ca.org2.example.com');
+async function connectToOrg2CA(
+  adminId,
+  username,
+  email,
+  password,
+  userType,
+  affiliation
+) {
+  console.log("\n--> Register and enrolling new user");
+  const ccpOrg2 = buildCCPOrg2();
+  const caOrg2Client = buildCAClient(
+    FabricCAServices,
+    ccpOrg2,
+    "ca.org2.example.com"
+  );
 
-    const walletPathOrg2 = path.join(__dirname, 'wallet/org2');
-    const walletOrg2 = await buildWallet(Wallets, walletPathOrg2);
+  const walletPathOrg2 = path.join(__dirname, "wallet/org2");
+  const walletOrg2 = await buildWallet(Wallets, walletPathOrg2);
 
-    await registerAndEnrollUser(caOrg2Client, walletOrg2, mspOrg2, UserID, 'org2.department1');
+  const adminIdentity = await walletOrg2.get(adminId);
+  console.log("Admin user identity:", adminIdentity);
+  await registerAndEnrollUser(
+    caOrg2Client,
+    walletOrg2,
+    mspOrg2,
+    username,
+    userType,
+    affiliation
+  );
+  await registerUserToLedger(
+    walletOrg2,
+    username,
+    mspOrg2,
+    {
+      username: username,
+      email: email,
+      password: password,
+    },
+    userType,
+    adminId
+  );
 }
-async function main() {
-    if (process.argv[2] === undefined && process.argv[3] === undefined) {
-        console.log('Usage: node registerEnrollUser.js org userID');
-        process.exit(1);
+
+async function registerUserToLedger(
+  wallet,
+  username,
+  msp,
+  userData,
+  role,
+  adminId
+) {
+  console.log("Current MSP:", JSON.stringify(msp));
+  const gateway = new Gateway();
+  try {
+    const ccp = msp === mspOrg1 ? buildCCPOrg1() : buildCCPOrg2();
+
+    if (msp === mspOrg1) {
+      console.log("Using Org1 connection profile");
+    } else {
+      console.log("Using Org2 connection profile");
     }
 
-    const org = process.argv[2];
-    const userId = process.argv[3];
+    await gateway.connect(ccp, {
+      wallet,
+      identity: adminId,
+      discovery: { enabled: true, asLocalhost: true },
+    });
 
-    try {
-        if (org === 'Org1' || org === 'org1') {
-            await connectToOrg1CA(userId);
-        } else if (org === 'Org2' || org === 'org2') {
-            await connectToOrg2CA(userId);
-        } else {
-            console.log('Usage: node registerEnrollUser.js org userID');
-            console.log('Org must be Org1 or Org2');
-        }
-    } catch (error) {
-        console.error(`Error in enrolling admin: ${error}`);
-        process.exit(1);
-    }
+    const network = await gateway.getNetwork("mychannel");
+    const contract = network.getContract("digitalobject");
+
+    const hashedPassword = await argon2.hash(userData.password);
+    userData.password = hashedPassword;
+    console.log(hashedPassword);
+    await contract.submitTransaction(
+      "RegisterContract:registerUser",
+      JSON.stringify(userData),
+      role
+    );
+    console.log(`Successfully registered user ${username} to the ledger.`);
+  } finally {
+    gateway.disconnect();
+  }
 }
 
-main();
+async function main(
+  organization,
+  username,
+  email,
+  password,
+  userType,
+  adminId,
+  affiliation
+) {
+  try {
+    console.log(`Organization: ${organization}`);
+    console.log(`Username: ${username}`);
+    console.log(`Email: ${email}`);
+    console.log(`Password: ${password}`);
+    console.log(`UserType: ${userType}`);
+    console.log(`AdminId: ${adminId}`);
+    console.log(`Affiliation: ${affiliation}`);
+
+    if (organization === "Org1" || organization === "org1") {
+      if (userType === "admin") {
+        await enrollAdmin.connectToOrg1CA();
+      } else {
+        await connectToOrg1CA(
+          adminId,
+          username,
+          email,
+          password,
+          userType,
+          affiliation
+        );
+      }
+    } else if (organization === "Org2" || organization === "org2") {
+      if (userType === "admin") {
+        await enrollAdmin.connectToOrg2CA();
+      } else {
+        await connectToOrg2CA(
+          adminId,
+          username,
+          email,
+          password,
+          userType,
+          affiliation
+        );
+      }
+    } else {
+      console.log("Usage: node registerEnrollUser.js org userID");
+      console.log("Org must be Org1 or Org2");
+    }
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    process.exit(1);
+  }
+}
+
+exports.main = main;

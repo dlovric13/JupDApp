@@ -13,6 +13,10 @@ const { Contract } = require('fabric-contract-api');
 
 class AssetTransfer extends Contract {
 
+    constructor(){
+        super("AssetTransferContract")        
+    }
+
     async InitLedger(ctx) {
         const assets = [
             {
