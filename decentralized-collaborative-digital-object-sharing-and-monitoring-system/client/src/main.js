@@ -6,11 +6,11 @@ import vuetify from './plugins/vuetify'
 import "vuetify/styles";
 import { loadFonts } from './plugins/webfontloader'
 import axios from "axios";
-
+import Cookies from "js-cookie";
 // Request interceptor to add the token to every request
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+     const token = Cookies.get("token");
     if (token) {
       config.headers["x-auth-token"] = token;
     }
@@ -29,8 +29,10 @@ axios.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Handle token expiration, for example, by redirecting to the login page
-      localStorage.removeItem('token');
-      localStorage.removeItem('affiliation');
+      // localStorage.removeItem('token');
+      // localStorage.removeItem('affiliation');
+      Cookies.remove("token");
+      Cookies.remove("affiliation");
       router.push('/login'); // or the route name of your login page
     }
     return Promise.reject(error);

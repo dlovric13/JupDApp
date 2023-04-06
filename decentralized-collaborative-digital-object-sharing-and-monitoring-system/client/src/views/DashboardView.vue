@@ -394,211 +394,12 @@ export default {
       searchTerm: "",
       headers: [
         { id: 1, label: "Name" },
-        { id: 2, label: "Email" },
-        { id: 3, label: "Phone" },
+        { id: 2, label: "Last modified" },
+        { id: 3, label: "Created" },
       ],
-      rows: [
-        {
-          id: 1,
-          cells: [
-            { id: 1, value: "John Smith" },
-            { id: 2, value: "john@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 2,
-          cells: [
-            { id: 1, value: "Jane Smith" },
-            { id: 2, value: "jane@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 3,
-          cells: [
-            { id: 1, value: "Bob Smith" },
-            { id: 2, value: "bob@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 4,
-          cells: [
-            { id: 1, value: "Alice Smith" },
-            { id: 2, value: "alice@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 5,
-          cells: [
-            { id: 1, value: "Eve Smith" },
-            { id: 2, value: "eve@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 6,
-          cells: [
-            { id: 1, value: "Mallory Smith" },
-            { id: 2, value: "mallory@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 7,
-          cells: [
-            { id: 1, value: "Oscar Smith" },
-            { id: 2, value: "oscar@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 8,
-          cells: [
-            { id: 1, value: "Ralph Smith" },
-            { id: 2, value: "ralph@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 9,
-          cells: [
-            { id: 1, value: "Tom Smith" },
-            { id: 2, value: "tom@example.com" },
-            { id: 3, value: "123" },
-          ],
-        },
-        {
-          id: 10,
-          cells: [
-            { id: 1, value: "Jerry Smith" },
-            { id: 2, value: "jerry@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 11,
-          cells: [
-            { id: 1, value: "Mark Smith" },
-            { id: 2, value: "mark@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 12,
-          cells: [
-            { id: 1, value: "Philip Smith" },
-            { id: 2, value: "philip@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 13,
-          cells: [
-            { id: 1, value: "Beth Smith" },
-            { id: 2, value: "beth@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 14,
-          cells: [
-            { id: 1, value: "Sue Smith" },
-            { id: 2, value: "sue@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 15,
-          cells: [
-            { id: 1, value: "Liz Smith" },
-            { id: 2, value: "liz@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 16,
-          cells: [
-            { id: 1, value: "Sam Smith" },
-            { id: 2, value: "sam@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 17,
-          cells: [
-            { id: 1, value: "Wanda Smith" },
-            { id: 2, value: "wanda@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 18,
-          cells: [
-            { id: 1, value: "Alex Smith" },
-            { id: 2, value: "alex@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 19,
-          cells: [
-            { id: 1, value: "Katie Smith" },
-            { id: 2, value: "katie@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 20,
-          cells: [
-            { id: 1, value: "Mike Smith" },
-            { id: 2, value: "mike@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 21,
-          cells: [
-            { id: 1, value: "Nancy Smith" },
-            { id: 2, value: "nancy@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 22,
-          cells: [
-            { id: 1, value: "Toby Smith" },
-            { id: 2, value: "toby@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 23,
-          cells: [
-            { id: 1, value: "Zoe Smith" },
-            { id: 2, value: "zoe@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 24,
-          cells: [
-            { id: 1, value: "Violet Smith" },
-            { id: 2, value: "violet@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-        {
-          id: 25,
-          cells: [
-            { id: 1, value: "Ben Smith" },
-            { id: 2, value: "ben@example.com" },
-            { id: 3, value: "123-456-7890" },
-          ],
-        },
-      ],
+       rows: [
+      
+       ],
       currentPage: 1,
       rowsPerPage: 10,
     };
@@ -607,13 +408,16 @@ export default {
     this.getNotebookData();
   },
   computed: {
-    filteredRows() {
-      return this.rows.filter((row) => {
-        return row.cells[0].value
+     filteredRows() {
+    return this.rows.filter((row) => {
+      return (
+        row.cells[0].value &&
+        row.cells[0].value
           .toLowerCase()
-          .includes(this.searchTerm.toLowerCase());
-      });
-    },
+          .includes(this.searchTerm.toLowerCase())
+      );
+    });
+  },
     paginatedRows() {
       let startIndex = (this.currentPage - 1) * this.rowsPerPage;
       return this.filteredRows.slice(startIndex, startIndex + this.rowsPerPage);
@@ -668,17 +472,26 @@ export default {
     navigateToLanding() {
       this.$router.push({ path: "/" });
     },
-     getNotebookData() {
-    axios.get('http://localhost:3000/notebook')
-      .then(response => {
-        // Handle the response data here
-        console.log(response.data);
-      })
-      .catch(error => {
-        // Handle errors here
-        console.error(error);
+    getNotebookData() {
+  axios.get('http://localhost:3000/notebook')
+    .then(response => {
+      this.rows = response.data.map((notebook, index) => {
+        return {
+          id: index,
+          cells: [
+            { id: 1, value: notebook.Key }, // Replace notebook.name with notebook.Key
+            { id: 2, value: new Date(notebook.Record.last_modified).toLocaleString() }, // Replace notebook.last_modified with notebook.Record.last_modified
+            { id: 3, value: new Date(notebook.Record.created).toLocaleString() }, // Replace notebook.created with notebook.Record.created
+          ],
+        };
       });
-  }
+      console.log(response.data);
+    })
+    .catch(error => {
+      // Handle errors here
+      console.error(error);
+    });
+}
   },
 };
 </script>

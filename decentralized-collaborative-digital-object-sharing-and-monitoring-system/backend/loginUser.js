@@ -64,6 +64,7 @@ async function loginUser(username, password) {
                 expiresIn: "1h",
               }
             );
+            console.log("Token from backend:", token);
             return token;
           } else {
             throw new Error("Incorrect password");

@@ -2,7 +2,34 @@ const express = require("express");
 const router = express.Router();
 
 const config = require("../util/config");
+const jwt = require("jsonwebtoken");
 
+
+
+function isAuthenticated(req, res, next) {
+// const token = req.headers["x-auth-token"];
+const token = req.cookies.token;
+ console.log("Token in isAuthenticated:", token);
+  if (!token) {
+    return res.status(401).send("Access denied. No token provided.");
+  }
+
+  try {
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (ex) {
+    res.status(400).send("Invalid token.");
+  }
+}
+
+router.get("/get-token",  (req, res) => {
+//   const { username } = req.user;
+  const token = jwt.sign({}, config.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+  res.status(200).send({ token });
+});
 
 router.post("/register", async (req, res) => {
   const {

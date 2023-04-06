@@ -238,6 +238,7 @@
 <script>
 import axios from "axios";
 import jwt_decode from "jwt-decode";
+import Cookies from "js-cookie";
 
 console.log("LoginView script executed");
 // Components
@@ -290,10 +291,15 @@ export default {
         const response = await axios.post("http://localhost:3000/auth/login", {
           username: this.username,
           password: this.password,
-        });
+        },
+      
+    );
         // console.log(response.data); 
         if (response.data.token) {
-          localStorage.setItem("token", response.data.token);
+          // localStorage.setItem("token", response.data.token);
+          console.log('Token from response:', response.data.token);
+          Cookies.set("token", response.data.token, { expires: 1, secure: false, path: '/' });
+          console.log('Token set in cookie:', Cookies.get("token"));
           const decodedToken = jwt_decode(response.data.token);
           const userAffiliation = decodedToken.affiliation;
           localStorage.setItem("affiliation", userAffiliation);
