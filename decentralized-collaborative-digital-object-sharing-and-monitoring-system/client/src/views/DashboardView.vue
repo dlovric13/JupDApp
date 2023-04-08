@@ -55,7 +55,7 @@
           <th class="data-table-header font-weight-bold">Download</th>
           <th class="data-table-header font-weight-bold">Edit</th>
         </tr>
-        <tr v-for="row in paginatedRows" :key="row.id" @click="showPopUp(row)">
+        <tr v-for="row in paginatedRows" :key="row.id" :class="{ highlight: row.highlight }" @click="showPopUp(row)">
           <td v-for="cell in row.cells" :key="cell.id">
             {{ cell.value }}
           </td>
@@ -267,6 +267,17 @@
   margin: 0 auto;
 }
 
+.data-table .highlight {
+  background-color: #ffffaa;
+  animation: remove-background 2s ease 2s forwards;
+}
+
+
+@keyframes remove-background {
+  from { background-color: #ffffaa; }
+  to { background-color: transparent; }
+}
+
 .pagination {
   display: flex;
   flex-wrap: nowrap;
@@ -380,12 +391,16 @@
 
 <script>
 import axios from 'axios';
+// import io from "socket.io-client";
+// const socket = io("http://localhost:3000");
+const socket = new WebSocket("ws://localhost:3000/ws");
 export default {
   data() {
     return {
       sidebarCollapsed: true,
       showDetails: false,
       selectedRow: null,
+       highlightedRowId: null,
       options: [
         { id: 1, label: "Option 1" },
         { id: 2, label: "Option 2" },
@@ -406,6 +421,9 @@ export default {
   },
    created() {
     this.getNotebookData();
+    socket.addEventListener("message", () => { 
+    this.getNotebookData();
+  });
   },
   computed: {
      filteredRows() {
@@ -420,7 +438,13 @@ export default {
   },
     paginatedRows() {
       let startIndex = (this.currentPage - 1) * this.rowsPerPage;
-      return this.filteredRows.slice(startIndex, startIndex + this.rowsPerPage);
+      let slicedRows = this.filteredRows.slice(startIndex, startIndex + this.rowsPerPage);
+       return slicedRows.map(row => {
+    return {
+      ...row,
+      highlight: row.cells[0].value === this.highlightedRowId
+    };
+  });
     },
     pageCount() {
       return Math.ceil(this.filteredRows.length / this.rowsPerPage);
@@ -479,12 +503,15 @@ export default {
         return {
           id: index,
           cells: [
-            { id: 1, value: notebook.Key }, // Replace notebook.name with notebook.Key
-            { id: 2, value: new Date(notebook.Record.last_modified).toLocaleString() }, // Replace notebook.last_modified with notebook.Record.last_modified
-            { id: 3, value: new Date(notebook.Record.created).toLocaleString() }, // Replace notebook.created with notebook.Record.created
+            { id: 1, value: notebook.Key }, 
+            { id: 2, value: new Date(notebook.Record.last_modified).toLocaleString() },
+            { id: 3, value: new Date(notebook.Record.created).toLocaleString() }, 
           ],
         };
       });
+       if (response.data.length > 0) {
+        this.highlightedRowId = response.data[response.data.length - 1].Key;
+      }
       console.log(response.data);
     })
     .catch(error => {
@@ -495,5 +522,3 @@ export default {
   },
 };
 </script>
-
-

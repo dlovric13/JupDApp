@@ -39,7 +39,7 @@ const jwtMiddleware = jwt({
     return token;
   },
 }).unless({
-  path: ["/auth/login", "/api/get-token"],
+  path: ["/auth/login", "/api/get-token", "/auth/register"],
 });
 
 module.exports = jwtMiddleware;

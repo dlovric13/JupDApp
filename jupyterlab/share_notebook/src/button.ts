@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ToolbarButton } from '@jupyterlab/apputils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
@@ -127,6 +128,9 @@ export class ButtonExtension
       requestAPI<any>(`/api/contents/${path}`)
         .then(data => {
           this.send_data(data, token);
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          const socket = this.createWebSocketConnection(token);
         })
         .catch(reason => {
           console.error(
@@ -136,6 +140,44 @@ export class ButtonExtension
     } else {
       console.error('Failed to fetch token');
     }
+  }
+
+  createWebSocketConnection(token: string): WebSocket {
+    const webSocketURL = 'ws://localhost:3000/ws';
+
+    const socket = new WebSocket(webSocketURL);
+
+    // Connection opened
+    socket.addEventListener('open', (event: Event) => {
+      console.log('WebSocket connection opened:', event);
+
+      // Send the token to the server after establishing the WebSocket connection
+      socket.send(JSON.stringify({ type: 'token', data: token }));
+    });
+
+    socket.addEventListener('error', event => {
+      console.error('WebSocket open error:', event);
+    });
+
+    // Listen for messages
+    socket.addEventListener('message', (event: MessageEvent) => {
+      console.log('WebSocket message received:', event);
+
+      // Handle WebSocket messages from the server
+      // TODO: Add your message handling logic here
+    });
+
+    // Connection closed
+    socket.addEventListener('close', (event: CloseEvent) => {
+      console.log('WebSocket connection closed:', event);
+    });
+
+    // Connection error
+    socket.addEventListener('error', (event: Event) => {
+      console.error('WebSocket connection error:', event);
+    });
+
+    return socket;
   }
 
   async send_data(dataToSend: JSON, token: string): Promise<void> {

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { onNewNotebookShared } = require("../middlewares/socketHandler");
 
 // Import the Hyperledger Fabric SDK and create a new Gateway instance
 const { Gateway, Wallets } = require("fabric-network");
@@ -22,7 +23,7 @@ const gatewayTimeout = 5000;
 const ccpJSON = fs.readFileSync(ccpPath, "utf8");
 const ccp = JSON.parse(ccpJSON);
 
-async function storeNotebook(req, res) {
+async function storeNotebook(req, res, io) {
   const notebook = req.body;
   console.log("tu1");
   console.log(req.body);
@@ -59,6 +60,8 @@ async function storeNotebook(req, res) {
     );
     console.log(`Notebook stored: ${notebook}`);
     res.status(201).json({ message: "Notebook created" });
+
+    onNewNotebookShared(io);
 
     await gateway.disconnect();
   } catch (error) {
@@ -147,9 +150,10 @@ async function getNotebookById(req, res) {
     res.status(500).send(`Failed to get notebook with ID ${notebookId}`);
   }
 }
-
+module.exports = (io) => {
 router.get("/", getAllNotebooks);
 router.get("/:id", getNotebookById);
-router.post("/", storeNotebook);
+router.post("/", (req, res) => storeNotebook(req, res, io));
 
-module.exports = router;
+return router;
+}

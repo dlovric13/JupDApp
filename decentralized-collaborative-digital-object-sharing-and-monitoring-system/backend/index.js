@@ -4,7 +4,12 @@ const cors = require("cors");
 const { JWT_SECRET } = require("./util/config");
 const jwtMiddleware = require("./middlewares/jwtMiddleware");
 const cookieParser = require("cookie-parser");
+const http = require("http");
+const { initWebSocket } = require("./middlewares/socketHandler");
 const app = express();
+const server = http.createServer(app);
+const io = initWebSocket(server);
+
 const port = 3000;
 
 
@@ -35,10 +40,17 @@ app.set("secret", JWT_SECRET);
 app.use(jwtMiddleware);
 
 
-const notebookRoutes = require("./routes/notebookRoutes");
+const notebookRoutes = require("./routes/notebookRoutes")(io); 
 const authRoutes = require("./routes/authRoutes");
 
 app.use("/notebook", notebookRoutes);
 app.use("/auth", authRoutes);
 app.use("/api", authRoutes);
-app.listen(port, () => console.log(`Server started on port ${port}`));
+
+
+// Replace this line:
+// app.listen(port, () => console.log(`Server started on port ${port}`));
+
+// With this line:
+server.listen(port, () => console.log(`Server started on port ${port}`));
+
