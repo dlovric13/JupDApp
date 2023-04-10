@@ -1,29 +1,34 @@
 <template>
   <div class="container p-4">
     <div class="sidebar" :class="{ collapsed: sidebarCollapsed }">
-       <div class="header d-flex align-items-center">
-  <div class="back-arrow-container" style="order: -1; padding: 8px 0px;">
-    <a href="#" @click.prevent="goBack" class="back-arrow">
-      <i class="mdi mdi-arrow-left icon"></i>
-    </a>
-  </div>
-  <!-- <h2  @click="navigateToLanding" class="header-title text-white font-weight-bold mr-auto" style="padding: 8px 0px">Data Table</h2> -->
-  <div class="menu-icon-container">
-    <h2
-      class="sidebar-header text-white font-weight-bold py-2"
-      @click="sidebarCollapsed = !sidebarCollapsed"
-    >
-      <i :class="sidebarCollapsed ? 'mdi mdi-menu icon' : 'mdi mdi-close icon'"></i>
-    </h2>
-  </div>
-</div>
+      <div class="header d-flex align-items-center">
+        <div class="back-arrow-container" style="order: -1; padding: 8px 0px">
+          <a href="#" @click.prevent="goBack" class="back-arrow">
+            <i class="mdi mdi-arrow-left icon"></i>
+          </a>
+        </div>
+        <!-- <h2  @click="navigateToLanding" class="header-title text-white font-weight-bold mr-auto" style="padding: 8px 0px">Data Table</h2> -->
+        <div class="menu-icon-container">
+          <h2
+            class="sidebar-header text-white font-weight-bold py-2"
+            @click="sidebarCollapsed = !sidebarCollapsed"
+          >
+            <i
+              :class="
+                sidebarCollapsed ? 'mdi mdi-menu icon' : 'mdi mdi-close icon'
+              "
+            ></i>
+          </h2>
+        </div>
+      </div>
       <ul class="sidebar-options list-unstyled mt-4">
-        <li 
+        <li
           class="sidebar-option py-2"
           v-for="option in options"
           :key="option.id"
         >
-          <i @click=logout class="mdi mdi-account-outline mr-2"></i> {{ option.label }}
+          <i @click="logout" class="mdi mdi-account-outline mr-2"></i>
+          {{ option.label }}
         </li>
       </ul>
     </div>
@@ -31,9 +36,9 @@
       class="content"
       :style="{ marginLeft: sidebarCollapsed ? '0' : '200px' }"
     >
-     <h2 class="content-header text-white font-weight-bold py-2">
-  <span @click="navigateToLanding">Data Table</span>
-</h2>
+      <h2 class="content-header text-white font-weight-bold py-2">
+        <span @click="navigateToLanding">Data Table</span>
+      </h2>
       <div class="search-container mt-4 mb-4 d-flex align-items-center">
         <i class="mdi mdi-magnify mr-2"></i>
         <input
@@ -55,7 +60,13 @@
           <th class="data-table-header font-weight-bold">Download</th>
           <th class="data-table-header font-weight-bold">Edit</th>
         </tr>
-        <tr v-for="row in paginatedRows" :key="row.id" :class="{ highlight: row.highlight }" @click="showPopUp(row)">
+        <tr
+          v-for="row in paginatedRows"
+          :key="row.id"
+          :class="{ highlight: row.highlight }"
+          @click="showPopUp(row)"
+          v-bind:ref="`row_${row.id}`"
+        >
           <td v-for="cell in row.cells" :key="cell.id">
             {{ cell.value }}
           </td>
@@ -114,7 +125,12 @@
         <button class="close-button" @click="showDetails = false">
           &times;
         </button>
-        <div v-html="selectedRowDetails"></div>
+        <div class="popup-content">
+          <div v-html="selectedRowDetails"></div>
+        </div>
+        <button class="request-access-button" @click="requestAccess">
+          Request Access
+        </button>
       </div>
     </div>
   </div>
@@ -123,10 +139,9 @@
 
 
 <style>
-
 .icon {
-    margin:0;
-    padding:0;
+  margin: 0;
+  padding: 0;
 }
 
 .container {
@@ -201,12 +216,12 @@
 
 .content-header span {
   cursor: pointer;
- transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
+  transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
 }
 
 .content-header span:hover {
   color: #27a2f2;
-  text-decoration: none; 
+  text-decoration: none;
   /* background-color: #f5f5f5; */
   /* font-size: 1.2rem; */
   font-weight: bold;
@@ -272,10 +287,13 @@
   animation: remove-background 2s ease 2s forwards;
 }
 
-
 @keyframes remove-background {
-  from { background-color: #ffffaa; }
-  to { background-color: transparent; }
+  from {
+    background-color: #ffffaa;
+  }
+  to {
+    background-color: transparent;
+  }
 }
 
 .pagination {
@@ -330,6 +348,12 @@
   z-index: 1000;
 }
 
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .pop-up-window {
   background-color: white;
   border: 1px solid #ccc;
@@ -355,6 +379,24 @@
   outline: none;
 }
 
+.pop-up-window .request-access-button {
+  background-color: #27a2f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  width: fit-content;
+}
+
+.pop-up-window .request-access-button:hover {
+  background-color: #1e8fce;
+}
+
 .content h2.content-header {
   padding: 200px; /* same as .sidebar width */
 }
@@ -370,27 +412,27 @@
 } */
 
 .back-arrow-container {
-    position: relative;
-    margin-right: 10px;
+  position: relative;
+  margin-right: 10px;
 }
 
 .back-arrow {
-    /* padding: 10px; */
-    /* background-color: #f27727; */
-    color: #fff;
-    border-radius: 50%;
-    font-size: 1.5em;
-    transition: background-color 0.2s ease-in-out;
+  /* padding: 10px; */
+  /* background-color: #f27727; */
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.5em;
+  transition: background-color 0.2s ease-in-out;
 }
 
 .back-arrow:hover {
-    background-color: rgba(242, 119, 39, 0.8);
-    color: #fff;
+  background-color: rgba(242, 119, 39, 0.8);
+  color: #fff;
 }
 </style>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 // import io from "socket.io-client";
 // const socket = io("http://localhost:3000");
 const socket = new WebSocket("ws://localhost:3000/ws");
@@ -400,11 +442,13 @@ export default {
       sidebarCollapsed: true,
       showDetails: false,
       selectedRow: null,
-       highlightedRowId: null,
+      // highlightedRowId: null,
+      newRowKey: null,
+      latestTimestamp: null,
       options: [
         { id: 1, label: "Option 1" },
         { id: 2, label: "Option 2" },
-        { id: 3, label: "Log out"},
+        { id: 3, label: "Log out" },
       ],
       searchTerm: "",
       headers: [
@@ -412,39 +456,44 @@ export default {
         { id: 2, label: "Last modified" },
         { id: 3, label: "Created" },
       ],
-       rows: [
-      
-       ],
+      rows: [],
       currentPage: 1,
       rowsPerPage: 10,
     };
   },
-   created() {
+  created() {
+    this.newRowKey = null;
     this.getNotebookData();
-    socket.addEventListener("message", () => { 
-    this.getNotebookData();
-  });
+    socket.addEventListener("message", () => {
+      this.newRowKey = null;
+      this.getNotebookData();
+    });
+
+    console.log("On created", this.newRowKey);
   },
   computed: {
-     filteredRows() {
-    return this.rows.filter((row) => {
-      return (
-        row.cells[0].value &&
-        row.cells[0].value
-          .toLowerCase()
-          .includes(this.searchTerm.toLowerCase())
-      );
-    });
-  },
+    filteredRows() {
+      return this.rows.filter((row) => {
+        return (
+          row.cells[0].value &&
+          row.cells[0].value
+            .toLowerCase()
+            .includes(this.searchTerm.toLowerCase())
+        );
+      });
+    },
     paginatedRows() {
       let startIndex = (this.currentPage - 1) * this.rowsPerPage;
-      let slicedRows = this.filteredRows.slice(startIndex, startIndex + this.rowsPerPage);
-       return slicedRows.map(row => {
-    return {
-      ...row,
-      highlight: row.cells[0].value === this.highlightedRowId
-    };
-  });
+      let slicedRows = this.filteredRows.slice(
+        startIndex,
+        startIndex + this.rowsPerPage
+      );
+      return slicedRows.map((row) => {
+        return {
+          ...row,
+           highlight: Date.parse(row.cells[1].timestamp) === this.latestTimestamp,
+        };
+      });
     },
     pageCount() {
       return Math.ceil(this.filteredRows.length / this.rowsPerPage);
@@ -464,7 +513,14 @@ export default {
     },
     selectedRowDetails() {
       // Return the details of the selected row in HTML format
-      return `<h3>${this.selectedRow.cells[0].value}</h3><p>${this.selectedRow.cells[1].value}</p>`;
+      return `
+        <h3>${this.selectedRow.cells[0].value}</h3>
+        <p>Last modified: ${this.selectedRow.cells[1].value}</p>
+        <p>Type: ${this.selectedRow.type}</p>
+        <p>Size: ${this.selectedRow.size}</p>
+        <p>Path: ${this.selectedRow.path}</p>
+        <p>Format: ${this.selectedRow.format}</p>
+      `;
     },
   },
   methods: {
@@ -472,7 +528,7 @@ export default {
       if (this.canGoBack) {
         this.currentPage--;
       }
-        window.history.back();
+      window.history.back();
     },
     goForward() {
       if (this.canGoForward) {
@@ -496,29 +552,67 @@ export default {
     navigateToLanding() {
       this.$router.push({ path: "/" });
     },
+    // highlightRow(rowId) {
+    //  if (this.highlightedRowId !== null) {
+    //   // Remove highlight class from previously highlighted row
+    //   const prevRow = this.$refs[`row_${this.highlightedRowId}`];
+    //   prevRow.classList.remove('highlight');
+    // }
+
+    // // Add highlight class to new row
+    // const newRow = this.$refs[`row_${rowId}`];
+    // newRow.classList.add('highlight');
+
+    // // Set highlightedRowId to the new row's ID
+    // this.highlightedRowId = rowId;
+    // },
     getNotebookData() {
-  axios.get('http://localhost:3000/notebook')
-    .then(response => {
-      this.rows = response.data.map((notebook, index) => {
-        return {
-          id: index,
-          cells: [
-            { id: 1, value: notebook.Key }, 
-            { id: 2, value: new Date(notebook.Record.last_modified).toLocaleString() },
-            { id: 3, value: new Date(notebook.Record.created).toLocaleString() }, 
-          ],
-        };
-      });
-       if (response.data.length > 0) {
-        this.highlightedRowId = response.data[response.data.length - 1].Key;
-      }
-      console.log(response.data);
-    })
-    .catch(error => {
-      // Handle errors here
-      console.error(error);
-    });
-}
+      axios
+        .get("http://localhost:3000/notebook")
+        .then((response) => {
+          console.log("Raw response data:", response.data);
+
+          const lastModifiedTimestamps = response.data.map((notebook) =>
+            Date.parse(notebook.Record.last_modified)
+          );
+          console.log("Last modified timestamps:", lastModifiedTimestamps);
+
+          if (response.data.length > 0) {
+            this.latestTimestamp = Math.max(...lastModifiedTimestamps);
+            console.log("Latest timestamp:", this.latestTimestamp);
+          }
+
+          this.rows = response.data.map((notebook, index) => {
+            return {
+              id: index,
+              type: notebook.Record.type,
+              size: notebook.Record.size,
+              path: notebook.Record.path,
+              format: notebook.Record.format,
+              cells: [
+                { id: 1, value: notebook.Key },
+                {
+                  id: 2,
+                  value: new Date(
+                    notebook.Record.last_modified
+                  ).toLocaleString(),
+                  timestamp: notebook.Record.last_modified,
+                },
+                {
+                  id: 3,
+                  value: new Date(notebook.Record.created).toLocaleString(),
+                },
+              ],
+            };
+          });
+
+          console.log(response.data);
+        })
+        .catch((error) => {
+          // Handle errors here
+          console.error(error);
+        });
+    },
   },
 };
 </script>
