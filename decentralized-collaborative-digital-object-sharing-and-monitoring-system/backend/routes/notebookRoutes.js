@@ -59,7 +59,7 @@ async function storeNotebook(req, res, io) {
       JSON.stringify(notebook)
     );
     console.log(`Notebook stored: ${notebook}`);
-    res.status(201).json({ message: "Notebook created" });
+    res.status(201).json({ message: "Notebook created"});
 
     onNewNotebookShared(io);
 
@@ -150,10 +150,106 @@ async function getNotebookById(req, res) {
     res.status(500).send(`Failed to get notebook with ID ${notebookId}`);
   }
 }
+
+async function requestAccess(req, res) {
+  const { notebookId, userId } = req.body;
+  try {
+    
+    const walletPath = path.join(__dirname, "..", "wallet", "org1");
+    const wallet = await Wallets.newFileSystemWallet(walletPath);
+    console.log(`Wallet path: ${walletPath}`);
+
+    const userExists = await wallet.get("admin");
+    if (!userExists) {
+      console.log(
+        'An identity for the user "user1" does not exist in the wallet'
+      );
+      console.log("Run the registerUser.js application before retrying");
+      return;
+    }
+
+    const gateway = new Gateway();
+    await gateway.connect(ccp, {
+      wallet,
+      identity: "admin",
+      discovery: { enabled: true, asLocalhost: true },
+      timeout: gatewayTimeout,
+    });
+
+    const network = await gateway.getNetwork("mychannel");
+    const contract = network.getContract("digitalobject");
+
+    await contract.submitTransaction(
+      "NotebookContract:requestAccess",
+      notebookId,
+      userId
+    );
+    console.log(
+      `Access request sent for notebook ID ${notebookId} by user ID ${userId}`
+    );
+    res.status(201).json({ message: "Access request sent" });
+
+    await gateway.disconnect();
+  } catch (error) {
+    console.error(`Failed to request access: ${error}`);
+    res.status(500).send("Failed to request access");
+  }
+}
+
+async function manageAccess(req, res) {
+  const notebookId = req.params.id;
+  const userId = req.params.userId;
+  const action = req.params.action;
+
+  try {
+    const walletPath = path.join(__dirname, "..", "wallet", "org1");
+    const wallet = await Wallets.newFileSystemWallet(walletPath);
+    console.log(`Wallet path: ${walletPath}`);
+
+    const userExists = await wallet.get("admin");
+    if (!userExists) {
+      console.log(
+        'An identity for the user "user1" does not exist in the wallet'
+      );
+      console.log("Run the registerUser.js application before retrying");
+      return;
+    }
+
+    const gateway = new Gateway();
+    await gateway.connect(ccp, {
+      wallet,
+      identity: "admin",
+      discovery: { enabled: true, asLocalhost: true },
+      timeout: gatewayTimeout,
+    });
+
+    const network = await gateway.getNetwork("mychannel");
+    const contract = network.getContract("digitalobject");
+
+    await contract.submitTransaction(
+      "NotebookContract:manageAccess",
+      notebookId,
+      userId,
+      action
+    );
+    console.log(
+      `Access request for notebook ID ${notebookId} and user ID ${userId} was ${action}`
+    );
+    res.status(200).json({ message: "Access request managed" });
+
+    await gateway.disconnect();
+  } catch (error) {
+    console.error(`Failed to manage access: ${error}`);
+    res.status(500).send("Failed to manage access");
+  }
+}
+
 module.exports = (io) => {
 router.get("/", getAllNotebooks);
 router.get("/:id", getNotebookById);
 router.post("/", (req, res) => storeNotebook(req, res, io));
+router.post("/request-access", requestAccess);
+router.post("/:id/manage-access/:userId/:action", manageAccess);
 
 return router;
 }

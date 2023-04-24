@@ -7,10 +7,10 @@ class RegisterChaincode extends Contract {
     super("RegisterContract");
   }
 
-  async registerUser(ctx, userData, role) {
+  async registerUser(ctx, userData, userType) {
     const dataToStore = {
       ...JSON.parse(userData),
-      role: role,
+      userType: userType,
     };
 
     // Use the username as the key instead of the whole userData object
@@ -44,6 +44,7 @@ class RegisterChaincode extends Contract {
     return JSON.stringify({
       password: user.password,
       affiliation: user.affiliation,
+      userType: user.userType,
     });
   }
 

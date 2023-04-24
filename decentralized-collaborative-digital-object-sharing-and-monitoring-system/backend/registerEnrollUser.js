@@ -15,7 +15,6 @@ const {
   buildCCPOrg2,
   buildWallet,
 } = require("./util/AppUtil.js");
-const enrollAdmin = require("./enrollAdmin");
 const argon2 = require("argon2");
 
 const mspOrg1 = "Org1MSP";
@@ -52,7 +51,6 @@ async function connectToOrg1CA(
     walletOrg1,
     mspOrg1,
     username,
-    userType,
     affiliation
   );
   await registerUserToLedger(
@@ -95,7 +93,6 @@ async function connectToOrg2CA(
     walletOrg2,
     mspOrg2,
     username,
-    userType,
     affiliation
   );
   await registerUserToLedger(
@@ -117,7 +114,7 @@ async function registerUserToLedger(
   username,
   msp,
   userData,
-  role,
+  userType,
   adminId
 ) {
   console.log("Current MSP:", JSON.stringify(msp));
@@ -146,7 +143,7 @@ async function registerUserToLedger(
     await contract.submitTransaction(
       "RegisterContract:registerUser",
       JSON.stringify(userData),
-      role
+      userType
     );
     console.log(`Successfully registered user ${username} to the ledger.`);
   } finally {
@@ -173,9 +170,7 @@ async function main(
     console.log(`Affiliation: ${affiliation}`);
 
     if (organization === "Org1" || organization === "org1") {
-      if (userType === "admin") {
-        await enrollAdmin.connectToOrg1CA();
-      } else {
+    
         await connectToOrg1CA(
           adminId,
           username,
@@ -184,11 +179,7 @@ async function main(
           userType,
           affiliation
         );
-      }
     } else if (organization === "Org2" || organization === "org2") {
-      if (userType === "admin") {
-        await enrollAdmin.connectToOrg2CA();
-      } else {
         await connectToOrg2CA(
           adminId,
           username,
@@ -197,7 +188,6 @@ async function main(
           userType,
           affiliation
         );
-      }
     } else {
       console.log("Usage: node registerEnrollUser.js org userID");
       console.log("Org must be Org1 or Org2");

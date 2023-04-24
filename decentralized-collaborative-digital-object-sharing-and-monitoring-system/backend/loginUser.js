@@ -56,10 +56,11 @@ async function loginUser(username, password) {
           const isPasswordValid = await argon2.verify(hashedPassword, password);
 
           if (isPasswordValid) {
-            // Generate JWT token for the user
+            
+            const userType = userDetails.userType;
             const token = jwt.sign(
-              { username, affiliation: userAffiliation },
-                JWT_SECRET,
+              { username, affiliation: userAffiliation, userType },
+              JWT_SECRET,
               {
                 expiresIn: "1h",
               }

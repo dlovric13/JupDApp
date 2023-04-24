@@ -298,12 +298,12 @@ export default {
         if (response.data.token) {
           // localStorage.setItem("token", response.data.token);
           console.log('Token from response:', response.data.token);
-          Cookies.set("token", response.data.token, { expires: 1, secure: false, path: '/' });
+          Cookies.set("token", response.data.token, { expires: 1, secure: false, path: '/'});
           console.log('Token set in cookie:', Cookies.get("token"));
           const decodedToken = jwt_decode(response.data.token);
           const userAffiliation = decodedToken.affiliation;
           localStorage.setItem("affiliation", userAffiliation);
-
+          
           this.$router.push("/dashboard");
         } else {
           this.errorMessage = "Invalid username or password";

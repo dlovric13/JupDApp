@@ -55,7 +55,6 @@ exports.registerAndEnrollUser = async (
   wallet,
   orgMspId,
   userId,
-  userType,
   affiliation,
 ) => {
   try {
@@ -90,7 +89,7 @@ exports.registerAndEnrollUser = async (
       {
         affiliation: affiliation,
         enrollmentID: userId,
-        role: userType,
+        role: 'client',
       },
       adminUser
     );

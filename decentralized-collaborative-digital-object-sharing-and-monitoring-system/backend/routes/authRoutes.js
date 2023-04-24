@@ -4,12 +4,9 @@ const router = express.Router();
 const config = require("../util/config");
 const jwt = require("jsonwebtoken");
 
-
-
 function isAuthenticated(req, res, next) {
-// const token = req.headers["x-auth-token"];
-const token = req.cookies.token;
- console.log("Token in isAuthenticated:", token);
+  const token = req.cookies.token;
+  console.log("Token in isAuthenticated:", token);
   if (!token) {
     return res.status(401).send("Access denied. No token provided.");
   }
@@ -23,12 +20,32 @@ const token = req.cookies.token;
   }
 }
 
-router.get("/get-token",  (req, res) => {
-//   const { username } = req.user;
-  const token = jwt.sign({}, config.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-  res.status(200).send({ token });
+router.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
+
+router.get("/get-token", async (req, res) => {
+  console.log("GET /get-token request received");
+  const fixedKey = "fixedTokenKey";
+  const redisClient = req.app.get("redisClient");
+
+  redisClient
+    .get(fixedKey, (err, token) => {
+      if (err) {
+        console.error("Error getting token from Redis:", err);
+        res.status(500).send("Error getting token");
+      } else if (token) {
+        res.send({ token });
+        console.log("Token from the /get-token route", token);
+      } else {
+        res.status(404).send({ message: "Token not found in Redis" });
+      }
+    })
+    .catch((err) => {
+      console.error("Error in /get-token route:", err);
+      res.status(500).send("Error getting token");
+    });
 });
 
 router.post("/register", async (req, res) => {
@@ -41,10 +58,6 @@ router.post("/register", async (req, res) => {
     affiliation,
   } = req.body;
 
-  console.log(req.body);
-  console.log("tu1" + organization);
-  console.log("tu2" + userType);
-  console.log("tu3" + affiliation);
   try {
     // You can add more validation logic here if needed
     if (!username || !email || !password || !organization) {
@@ -75,12 +88,16 @@ router.post("/login", async (req, res) => {
 
   try {
     const loginUserScript = require("../loginUser.js");
-    const token = await loginUserScript.loginUser(
-      username,
-      password
-    );
+    const token = await loginUserScript.loginUser(username, password);
 
     if (token) {
+      const redisClient = req.app.get("redisClient");
+      const fixedKey = "fixedTokenKey";
+
+     await redisClient.set(fixedKey, token, "EX", 60 * 60);
+
+
+      console.log("Redis token:", fixedKey, token);
       res.status(200).send({ token });
     } else {
       res.status(401).send({ message: "Invalid email or password" });
@@ -88,7 +105,13 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Error logging in user:", error);
     res.status(500).send("Error logging in user");
+    next(error);
   }
+});
+
+router.use((error, req, res, next) => {
+  console.error("Error in /login route:", error);
+  res.status(500).send({ message: "Error logging in user", error });
 });
 
 module.exports = router;

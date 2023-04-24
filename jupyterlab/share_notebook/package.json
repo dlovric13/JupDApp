@@ -55,7 +55,8 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^3.1.0",
-    "js-cookie": "^3.0.1"
+    "js-cookie": "^3.0.1",
+    "jwt-decode": "^3.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

@@ -7,12 +7,11 @@ const cookieParser = require("cookie-parser");
 const http = require("http");
 const { initWebSocket } = require("./middlewares/socketHandler");
 const app = express();
+const { redisClient} = require("./redisSetup");
 const server = http.createServer(app);
 const io = initWebSocket(server);
 
 const port = 3000;
-
-
 
 // Middleware
 app.use(bodyParser.json());
@@ -20,25 +19,13 @@ app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:8080", "http://localhost:8888"], 
+    origin: ["http://localhost:8080", "http://127.0.0.1:8888"],
   })
 );
 
-app.use((req, res, next) => {
-    console.log("Request URL:", req.url);
-  console.log("Request token:", req.cookies.token);
-  next();
-});
-
-// app.use((req, res, next) => {
-//   console.log("Request headers:", req.headers);
-//   next();
-// });
-
-
+app.set("redisClient", redisClient);
 app.set("secret", JWT_SECRET);
 app.use(jwtMiddleware);
-
 
 const notebookRoutes = require("./routes/notebookRoutes")(io); 
 const authRoutes = require("./routes/authRoutes");
@@ -52,5 +39,7 @@ app.use("/api", authRoutes);
 // app.listen(port, () => console.log(`Server started on port ${port}`));
 
 // With this line:
-server.listen(port, () => console.log(`Server started on port ${port}`));
-
+function startServer() {
+  server.listen(port, () => console.log(`Server started on port ${port}`));
+}
+startServer();

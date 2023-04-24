@@ -26,8 +26,9 @@
           class="sidebar-option py-2"
           v-for="option in options"
           :key="option.id"
+          @click="option.label === 'Log out' ? logout() : null"
         >
-          <i @click="logout" class="mdi mdi-account-outline mr-2"></i>
+          <i class="mdi mdi-account-outline mr-2"></i>
           {{ option.label }}
         </li>
       </ul>
@@ -36,8 +37,11 @@
       class="content"
       :style="{ marginLeft: sidebarCollapsed ? '0' : '200px' }"
     >
+      <v-snackbar v-model="snackbarVisible" :timeout="6000" color="success" top>
+        Access request sent successfully
+      </v-snackbar>
       <h2 class="content-header text-white font-weight-bold py-2">
-        <span @click="navigateToLanding">Data Table</span>
+        <span @click="navigateToLanding">Jupyter Notebook Repository</span>
       </h2>
       <div class="search-container mt-4 mb-4 d-flex align-items-center">
         <i class="mdi mdi-magnify mr-2"></i>
@@ -122,15 +126,19 @@
     </div>
     <div v-if="showDetails" class="pop-up-overlay">
       <div class="pop-up-window">
-        <button class="close-button" @click="showDetails = false">
+        <v-btn class="close-button" @click="showDetails = false">
           &times;
-        </button>
+        </v-btn>
         <div class="popup-content">
           <div v-html="selectedRowDetails"></div>
         </div>
-        <button class="request-access-button" @click="requestAccess">
+        <v-btn
+          class="request-access-button"
+          @click="requestAccess"
+          :disabled="requestedAccess[selectedRow.id]"
+        >
           Request Access
-        </button>
+        </v-btn>
       </div>
     </div>
   </div>
@@ -222,8 +230,6 @@
 .content-header span:hover {
   color: #27a2f2;
   text-decoration: none;
-  /* background-color: #f5f5f5; */
-  /* font-size: 1.2rem; */
   font-weight: bold;
 }
 
@@ -237,7 +243,6 @@
 }
 
 .search-container input {
-  /* other styles */
   appearance: none;
   background: transparent;
   border: 0;
@@ -355,6 +360,7 @@
 }
 
 .pop-up-window {
+  position: relative;
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -377,6 +383,9 @@
   font-weight: 700;
   cursor: pointer;
   outline: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
 .pop-up-window .request-access-button {
@@ -398,18 +407,12 @@
 }
 
 .content h2.content-header {
-  padding: 200px; /* same as .sidebar width */
+  padding: 100px;
 }
 
 .sidebar.collapsed .content h2.content-header {
-  text-indent: 0; /* reset text indent when sidebar is collapsed */
+  text-indent: 0;
 }
-
-/* .back-arrow {
-    position: absolute;
-    top: 0;
-    left: 0;
-} */
 
 .back-arrow-container {
   position: relative;
@@ -417,8 +420,6 @@
 }
 
 .back-arrow {
-  /* padding: 10px; */
-  /* background-color: #f27727; */
   color: #fff;
   border-radius: 50%;
   font-size: 1.5em;
@@ -433,8 +434,8 @@
 
 <script>
 import axios from "axios";
-// import io from "socket.io-client";
-// const socket = io("http://localhost:3000");
+import jwt_decode from "jsonwebtoken/decode";
+import Cookies from "js-cookie";
 const socket = new WebSocket("ws://localhost:3000/ws");
 export default {
   data() {
@@ -442,12 +443,12 @@ export default {
       sidebarCollapsed: true,
       showDetails: false,
       selectedRow: null,
-      // highlightedRowId: null,
-      newRowKey: null,
       latestTimestamp: null,
+      snackbarVisible: false,
+      requestedAccess: {},
       options: [
-        { id: 1, label: "Option 1" },
-        { id: 2, label: "Option 2" },
+        { id: 1, label: "Shared projects" },
+        { id: 2, label: "Requests" },
         { id: 3, label: "Log out" },
       ],
       searchTerm: "",
@@ -462,10 +463,12 @@ export default {
     };
   },
   created() {
-    this.newRowKey = null;
+    const savedRequestedAccess = localStorage.getItem("requestedAccess");
+    if (savedRequestedAccess) {
+      this.requestedAccess = JSON.parse(savedRequestedAccess);
+    }
     this.getNotebookData();
     socket.addEventListener("message", () => {
-      this.newRowKey = null;
       this.getNotebookData();
     });
 
@@ -491,7 +494,8 @@ export default {
       return slicedRows.map((row) => {
         return {
           ...row,
-           highlight: Date.parse(row.cells[1].timestamp) === this.latestTimestamp,
+          highlight:
+            Date.parse(row.cells[1].timestamp) === this.latestTimestamp,
         };
       });
     },
@@ -552,20 +556,51 @@ export default {
     navigateToLanding() {
       this.$router.push({ path: "/" });
     },
-    // highlightRow(rowId) {
-    //  if (this.highlightedRowId !== null) {
-    //   // Remove highlight class from previously highlighted row
-    //   const prevRow = this.$refs[`row_${this.highlightedRowId}`];
-    //   prevRow.classList.remove('highlight');
-    // }
 
-    // // Add highlight class to new row
-    // const newRow = this.$refs[`row_${rowId}`];
-    // newRow.classList.add('highlight');
+    logout() {
+      Cookies.remove("token");
+      Cookies.remove("username");
+      Cookies.remove("userType");
+      this.$router.push({ path: "/login" });
+    },
 
-    // // Set highlightedRowId to the new row's ID
-    // this.highlightedRowId = rowId;
-    // },
+    async requestAccess() {
+      const token = Cookies.get("token");
+      if (token) {
+        const decoded = jwt_decode(token);
+        const userId = decoded.username;
+        const notebookId = this.selectedRow.id;
+
+        this.requestedAccess[this.selectedRow.id] = true;
+
+        localStorage.setItem(
+          "requestedAccess",
+          JSON.stringify(this.requestedAccess)
+        );
+
+        try {
+          const response = await axios.post(
+            `http://localhost:3000/notebook/request-access`,
+            {
+              userId,
+              notebookId,
+            }
+          );
+          if (response.status === 201) {
+            this.snackbarVisible = true;
+            this.requestedAccess[this.selectedRow.id] = true;
+          } else {
+            // Handle other status codes or show an error message
+          }
+        } catch (error) {
+          // Handle request errors, e.g., network issues or server errors
+          console.error("Error requesting access:", error);
+        }
+      } else {
+        // Handle the case when there's no token available
+        console.error("No token found");
+      }
+    },
     getNotebookData() {
       axios
         .get("http://localhost:3000/notebook")
@@ -582,15 +617,16 @@ export default {
             console.log("Latest timestamp:", this.latestTimestamp);
           }
 
-          this.rows = response.data.map((notebook, index) => {
+          this.rows = response.data.map((notebook) => {
             return {
-              id: index,
+              id: notebook.Key,
+              name: notebook.Record.name,
               type: notebook.Record.type,
               size: notebook.Record.size,
               path: notebook.Record.path,
               format: notebook.Record.format,
               cells: [
-                { id: 1, value: notebook.Key },
+                { id: 1, value: notebook.Record.name },
                 {
                   id: 2,
                   value: new Date(

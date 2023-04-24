@@ -1,14 +1,5 @@
 const WebSocket = require("ws");
 
-// function onNewNotebookShared(wss) {
-//   // Emit the newNotebookShared event to all connected clients
-//   wss.clients.forEach((client) => {
-//     if (client.readyState === WebSocket.OPEN) {
-//       client.send("newNotebookShared");
-//     }
-//   });
-// }
-
 function onNewNotebookShared(wss) {
   // Emit the newNotebookShared event to all connected clients
   wss.clients.forEach((client) => {
@@ -29,7 +20,6 @@ const wss = new WebSocket.Server({ server, path: "/ws" });
     // Handle the 'token' message from the client
     socket.on("token", (message) => {
       console.log("Token received:", message);
-      // You can add your own logic here to validate the token, etc.
     });
 
     // Handle the 'disconnect' event
