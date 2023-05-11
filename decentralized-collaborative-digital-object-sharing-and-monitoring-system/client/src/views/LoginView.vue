@@ -22,12 +22,12 @@
                       <v-row align="center" justify="center">
                         <v-col cols="12" sm="8">
                           <v-form @submit.prevent="login">
-                            
                             <v-text-field
                               label="Username"
                               v-model="username"
                               :rules="usernameRules"
                               required
+                              color="#1a77d2"
                               autocomplete="username"
                             ></v-text-field>
 
@@ -35,7 +35,7 @@
                               label="Password"
                               outlined
                               dense
-                              color="#27A2F2"
+                              color="#1a77d2"
                               autocomplete="false"
                               type="password"
                               v-model="password"
@@ -48,7 +48,7 @@
                                 <v-checkbox
                                   label="Remember me"
                                   class="mt-n1"
-                                  color="#27A2F2"
+                                  color="#1a77d2"
                                 ></v-checkbox>
                               </v-col>
                             </v-row>
@@ -99,7 +99,7 @@
                       </v-card-text>
                       <div class="text-center text-white">
                         <v-btn
-                          color="#27A2F2"
+                          color="#27a2f2"
                           title
                           outlined
                           dark
@@ -109,6 +109,14 @@
                       </div>
                     </div>
                   </v-col>
+                  <v-snackbar
+                    v-model="snackbarVisible"
+                    :timeout="6000"
+                    color="success"
+                    top
+                  >
+                    Registration was successful
+                  </v-snackbar>
                 </v-row>
               </v-window-item>
               <v-window-item :value="2">
@@ -127,7 +135,7 @@
                       </v-card-text>
                       <div class="text-center text-white">
                         <v-btn
-                          color="#27A2F2"
+                          color="#27a2f2"
                           title
                           outlined
                           dark
@@ -158,7 +166,7 @@
                                   label="Username"
                                   outlined
                                   dense
-                                  color="#27A2F2"
+                                  color="#1a77d2"
                                   autocomplete="false"
                                   class="mt-4"
                                   v-model="username"
@@ -170,7 +178,7 @@
                               label="Email"
                               outlined
                               dense
-                              color="#27A2F2"
+                              color="#1a77d2"
                               autocomplete="false"
                               v-model="email"
                               name="email"
@@ -180,7 +188,7 @@
                               label="Password"
                               outlined
                               dense
-                              color="#27A2F2"
+                              color="#1a77d2"
                               type="password"
                               v-model="password"
                               name="password"
@@ -189,7 +197,7 @@
                               label="Organization"
                               outlined
                               dense
-                              color="#27A2F2"
+                              color="#1a77d2"
                               :items="organizations"
                               v-model="selectedOrg"
                               name="organization"
@@ -201,7 +209,7 @@
                               label="User type"
                               outlined
                               dense
-                              color="#27A2F2"
+                              color="#1a77d2"
                               :items="userTypes"
                               v-model="selectedUser"
                               name="user"
@@ -276,7 +284,11 @@ export default {
             affiliation: this.affiliation,
           }
         );
-
+        if (response.status === 200) {
+          this.snackbarVisible = true;
+        } else {
+          // Handle other status codes or show an error message
+        }
         console.log(response.data);
 
         // Redirect the user to the login page or show a success message
@@ -291,19 +303,21 @@ export default {
         const response = await axios.post("http://localhost:3000/auth/login", {
           username: this.username,
           password: this.password,
-        },
-      
-    );
-        // console.log(response.data); 
+        });
+        // console.log(response.data);
         if (response.data.token) {
           // localStorage.setItem("token", response.data.token);
-          console.log('Token from response:', response.data.token);
-          Cookies.set("token", response.data.token, { expires: 1, secure: false, path: '/'});
-          console.log('Token set in cookie:', Cookies.get("token"));
+          console.log("Token from response:", response.data.token);
+          Cookies.set("token", response.data.token, {
+            expires: 1,
+            secure: false,
+            path: "/",
+          });
+          console.log("Token set in cookie:", Cookies.get("token"));
           const decodedToken = jwt_decode(response.data.token);
           const userAffiliation = decodedToken.affiliation;
           localStorage.setItem("affiliation", userAffiliation);
-          
+
           this.$router.push("/dashboard");
         } else {
           this.errorMessage = "Invalid username or password";
@@ -327,6 +341,7 @@ export default {
     selectedUser: null,
     errorMessage: "",
     affiliation: "",
+    snackbarVisible: false,
   }),
   computed: {
     organizations() {
@@ -382,7 +397,7 @@ export default {
 }
 
 .back-arrow-container {
-  background-color: #27a2f2;
+  background-color: #1a77d2;
   width: 50px;
   height: 50px;
   border-radius: 25px;

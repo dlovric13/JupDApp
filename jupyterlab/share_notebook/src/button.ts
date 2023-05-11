@@ -8,6 +8,7 @@ import jwt_decode from 'jwt-decode';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 interface _DecodeToken {
+  userID: string;
   userType: string;
   // Add other properties of the token as needed
 }
@@ -101,12 +102,14 @@ export class ButtonExtension
     // If a token is available, proceed with the request
     if (token) {
       const decodedToken: _DecodeToken = jwt_decode(token);
+      const userId = decodedToken.userID;
       const userType = decodedToken.userType;
+      console.log('userId', userId);
       console.log('userType', userType);
       if (userType === 'admin') {
         requestAPI<any>(`/api/contents/${path}`)
           .then(data => {
-            this.send_data(data, token);
+            this.send_data(data, token, userId);
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             const socket = this.createWebSocketConnection(token);
@@ -161,7 +164,14 @@ export class ButtonExtension
     return socket;
   }
 
-  async send_data(dataToSend: JSON, token: string): Promise<void> {
+  async send_data(
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    dataToSend: any,
+    token: string,
+    userId: string
+  ): Promise<void> {
+    // Include the owner's userId in the notebook JSON
+    dataToSend.owner = userId;
     console.log(dataToSend);
     console.log('Token in send_data:', token);
     fetch('http://localhost:3000/notebook', {

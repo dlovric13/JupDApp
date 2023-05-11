@@ -1,38 +1,11 @@
 <template>
   <div class="container p-4">
-    <div class="sidebar" :class="{ collapsed: sidebarCollapsed }">
-      <div class="header d-flex align-items-center">
-        <div class="back-arrow-container" style="order: -1; padding: 8px 0px">
-          <a href="#" @click.prevent="goBack" class="back-arrow">
-            <i class="mdi mdi-arrow-left icon"></i>
-          </a>
-        </div>
-        <!-- <h2  @click="navigateToLanding" class="header-title text-white font-weight-bold mr-auto" style="padding: 8px 0px">Data Table</h2> -->
-        <div class="menu-icon-container">
-          <h2
-            class="sidebar-header text-white font-weight-bold py-2"
-            @click="sidebarCollapsed = !sidebarCollapsed"
-          >
-            <i
-              :class="
-                sidebarCollapsed ? 'mdi mdi-menu icon' : 'mdi mdi-close icon'
-              "
-            ></i>
-          </h2>
-        </div>
-      </div>
-      <ul class="sidebar-options list-unstyled mt-4">
-        <li
-          class="sidebar-option py-2"
-          v-for="option in options"
-          :key="option.id"
-          @click="option.label === 'Log out' ? logout() : null"
-        >
-          <i class="mdi mdi-account-outline mr-2"></i>
-          {{ option.label }}
-        </li>
-      </ul>
-    </div>
+    <SidebarVue
+      :collapsed="sidebarCollapsed"
+      :options="options"
+      @toggleCollapsed="sidebarCollapsed = !sidebarCollapsed"
+      @logout="logout"
+    />
     <div
       class="content"
       :style="{ marginLeft: sidebarCollapsed ? '0' : '200px' }"
@@ -40,18 +13,31 @@
       <v-snackbar v-model="snackbarVisible" :timeout="6000" color="success" top>
         Access request sent successfully
       </v-snackbar>
+      <div v-for="notification in notifications" :key="notification.id">
+        Your request for notebook "{{ notification.notebookName }}" has been
+        rejected.
+      </div>
       <h2 class="content-header text-white font-weight-bold py-2">
         <span @click="navigateToLanding">Jupyter Notebook Repository</span>
       </h2>
-      <div class="search-container mt-4 mb-4 d-flex align-items-center">
-        <i class="mdi mdi-magnify mr-2"></i>
-        <input
-          type="text"
-          class="form-control"
-          v-model="searchTerm"
-          placeholder="Search for a name..."
-        />
+      <div class="search-welcome-container mt-4 mb-4 d-flex align-items-center">
+        <div class="search-container mt-4 mb-4 d-flex align-items-center">
+          <i class="mdi mdi-magnify mr-2"></i>
+          <input
+            type="text"
+            class="form-control"
+            v-model="searchTerm"
+            placeholder="Search for a name..."
+          />
+        </div>
+        <v-card class="welcome-card ml-auto d-flex align-items-center">
+          <v-icon class="user-icon white--text mr-2">mdi-account</v-icon>
+          <v-card-title class="welcome-card-title"
+            >Welcome, {{ username }}</v-card-title
+          >
+        </v-card>
       </div>
+
       <table class="data-table table mt-4">
         <tr>
           <th
@@ -134,10 +120,10 @@
         </div>
         <v-btn
           class="request-access-button"
-          @click="requestAccess"
-          :disabled="requestedAccess[selectedRow.id]"
+          @click="handleButtonClick"
+          :disabled="isRequestPending"
         >
-          Request Access
+          {{ getButtonLabel }}
         </v-btn>
       </div>
     </div>
@@ -157,56 +143,8 @@
   height: 100%;
 }
 
-.sidebar {
-  width: 200px;
-  background-color: #27a2f2;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.2s ease;
-}
-
 .mdi-magnify {
   padding-left: 10px;
-}
-
-.sidebar.collapsed {
-  width: 0;
-}
-
-.sidebar-header {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  position: relative;
-  border-radius: 4px 4px 0 0;
-}
-
-.menu-icon,
-.close-icon {
-  cursor: pointer;
-  font-size: 18px;
-  margin: 8px;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.sidebar-options {
-  list-style: none;
-  margin: 0;
-  padding-top: 50px;
-  overflow: hidden;
-}
-
-.sidebar-option {
-  cursor: pointer;
-  padding: 8px;
-  white-space: nowrap;
-}
-
-.sidebar-option:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .content {
@@ -228,7 +166,7 @@
 }
 
 .content-header span:hover {
-  color: #27a2f2;
+  color: #1a77d2;
   text-decoration: none;
   font-weight: bold;
 }
@@ -255,7 +193,7 @@
 }
 
 .search-container input:focus {
-  border-color: #27a2f2;
+  border-color: #1a77d2;
 }
 
 .data-table {
@@ -316,7 +254,7 @@
   appearance: none;
   background: transparent;
   border: 0;
-  color: #27a2f2;
+  color: #1a77d2;
   font-size: 14px;
   font-weight: 700;
   padding: 8px 16px;
@@ -331,7 +269,7 @@
 }
 
 .pagination .active a {
-  background-color: #27a2f2;
+  background-color: #1a77d2;
   color: white;
 }
 
@@ -389,7 +327,7 @@
 }
 
 .pop-up-window .request-access-button {
-  background-color: #27a2f2;
+  background-color: #1a77d2;
   color: white;
   border: none;
   border-radius: 4px;
@@ -414,30 +352,50 @@
   text-indent: 0;
 }
 
-.back-arrow-container {
-  position: relative;
-  margin-right: 10px;
+.welcome-card {
+  background-color: #44547d;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-right: 2%;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.back-arrow {
-  color: #fff;
-  border-radius: 50%;
-  font-size: 1.5em;
-  transition: background-color 0.2s ease-in-out;
+.welcome-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
 }
 
-.back-arrow:hover {
-  background-color: rgba(242, 119, 39, 0.8);
-  color: #fff;
+.user-icon {
+  font-size: 24px;
+}
+
+.search-welcome-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.welcome-card-title {
+  font-weight: bold;
+  font-size: 20px;
 }
 </style>
 
 <script>
 import axios from "axios";
-import jwt_decode from "jsonwebtoken/decode";
+import jwtDecode from "jwt-decode";
 import Cookies from "js-cookie";
 const socket = new WebSocket("ws://localhost:3000/ws");
+import SidebarVue from "../components/SidebarVue.vue";
 export default {
+  components: {
+    SidebarVue,
+  },
   data() {
     return {
       sidebarCollapsed: true,
@@ -445,12 +403,10 @@ export default {
       selectedRow: null,
       latestTimestamp: null,
       snackbarVisible: false,
+      userId: null,
+      username: null,
       requestedAccess: {},
-      options: [
-        { id: 1, label: "Shared projects" },
-        { id: 2, label: "Requests" },
-        { id: 3, label: "Log out" },
-      ],
+      notifications: [],
       searchTerm: "",
       headers: [
         { id: 1, label: "Name" },
@@ -462,16 +418,31 @@ export default {
       rowsPerPage: 10,
     };
   },
+
   created() {
-    const savedRequestedAccess = localStorage.getItem("requestedAccess");
-    if (savedRequestedAccess) {
-      this.requestedAccess = JSON.parse(savedRequestedAccess);
+    const token = Cookies.get("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      if (decoded && decoded.userID) {
+        this.userId = decoded.userID;
+        this.username = decoded.username;
+        const savedRequestedAccess = localStorage.getItem(
+          `requestedAccess_${this.userId}`
+        );
+        if (savedRequestedAccess) {
+          this.requestedAccess = JSON.parse(savedRequestedAccess);
+        }
+      } else {
+        console.error("Error decoding token, userId not found:", decoded);
+      }
+    } else {
+      console.error("No token found");
     }
     this.getNotebookData();
     socket.addEventListener("message", () => {
       this.getNotebookData();
     });
-
+    this.fetchUserRequests();
     console.log("On created", this.newRowKey);
   },
   computed: {
@@ -526,6 +497,38 @@ export default {
         <p>Format: ${this.selectedRow.format}</p>
       `;
     },
+
+    isRequestPending() {
+      if (this.selectedRow && this.selectedRow.ACL) {
+        const accessObj = this.selectedRow.ACL.accessList.find(
+          (access) => access.userId === this.userId
+        );
+        return (
+          accessObj &&
+          accessObj.status !== "approved" &&
+          this.requestedAccess[this.selectedRow.id]
+        );
+      }
+      return false;
+    },
+
+     getButtonLabel() {
+    if (this.selectedRow) {
+      if (this.selectedRow.owner === this.userId) {
+        return "View notebook details";
+      } else if (this.selectedRow.ACL) {
+        const accessObj = this.selectedRow.ACL.accessList.find(
+          (access) => access.userId === this.userId
+        );
+        if (accessObj && accessObj.status === "approved") {
+          return "View notebook details";
+        } else if (this.isRequestPending) {
+          return "Access requested";
+        }
+      }
+    }
+    return "Request Access";
+  },
   },
   methods: {
     goBack() {
@@ -567,14 +570,14 @@ export default {
     async requestAccess() {
       const token = Cookies.get("token");
       if (token) {
-        const decoded = jwt_decode(token);
-        const userId = decoded.username;
+        const decoded = jwtDecode(token);
+        const username = decoded.username;
         const notebookId = this.selectedRow.id;
 
         this.requestedAccess[this.selectedRow.id] = true;
 
         localStorage.setItem(
-          "requestedAccess",
+          `requestedAccess_${this.userId}`,
           JSON.stringify(this.requestedAccess)
         );
 
@@ -582,13 +585,16 @@ export default {
           const response = await axios.post(
             `http://localhost:3000/notebook/request-access`,
             {
-              userId,
+              username,
               notebookId,
             }
           );
           if (response.status === 201) {
             this.snackbarVisible = true;
-            this.requestedAccess[this.selectedRow.id] = true;
+            this.selectedRow.ACL.accessList.push({
+              userId: this.userId,
+              status: "pending",
+            });
           } else {
             // Handle other status codes or show an error message
           }
@@ -601,6 +607,34 @@ export default {
         console.error("No token found");
       }
     },
+
+    async fetchUserRequests() {
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/notebook/requests"
+        );
+        const rejectedRequests = response.data
+          .map((notebook) => {
+            return notebook.requests.filter((request) => {
+              return (
+                request.username === this.user && request.status === "rejected"
+              );
+            });
+          })
+          .flat();
+        this.notifications = rejectedRequests;
+      } catch (error) {
+        console.error("Error fetching user requests:", error);
+      }
+    },
+    handleButtonClick() {
+      if (this.getButtonLabel === "Request Access") {
+        this.requestAccess();
+      } else if (this.getButtonLabel === "View notebook details") {
+        this.$router.push({ path: "/projects" });
+      }
+    },
+
     getNotebookData() {
       axios
         .get("http://localhost:3000/notebook")
@@ -625,6 +659,8 @@ export default {
               size: notebook.Record.size,
               path: notebook.Record.path,
               format: notebook.Record.format,
+              owner: notebook.Record.owner,
+              ACL: notebook.Record.ACL,
               cells: [
                 { id: 1, value: notebook.Record.name },
                 {

@@ -63,7 +63,8 @@ async function connectToOrg1CA(
       password: password,
     },
     userType,
-    adminId
+    adminId,
+    affiliation
   );
 }
 
@@ -105,7 +106,8 @@ async function connectToOrg2CA(
       password: password,
     },
     userType,
-    adminId
+    adminId,
+    affiliation
   );
 }
 
@@ -115,7 +117,8 @@ async function registerUserToLedger(
   msp,
   userData,
   userType,
-  adminId
+  adminId,
+  affiliation
 ) {
   console.log("Current MSP:", JSON.stringify(msp));
   const gateway = new Gateway();
@@ -143,7 +146,8 @@ async function registerUserToLedger(
     await contract.submitTransaction(
       "RegisterContract:registerUser",
       JSON.stringify(userData),
-      userType
+      userType,
+      affiliation
     );
     console.log(`Successfully registered user ${username} to the ledger.`);
   } finally {

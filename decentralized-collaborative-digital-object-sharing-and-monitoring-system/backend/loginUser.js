@@ -49,8 +49,8 @@ async function loginUser(username, password) {
               username
             )
           );
+          console.log("User details",userDetails);
           const hashedPassword = userDetails.password;
-          const userAffiliation = userDetails.affiliation;
 
 
           const isPasswordValid = await argon2.verify(hashedPassword, password);
@@ -58,8 +58,11 @@ async function loginUser(username, password) {
           if (isPasswordValid) {
             
             const userType = userDetails.userType;
+            const affiliation = userDetails.affiliation;
+            const userID = userDetails.userID;
+            console.log("User id:",userID);
             const token = jwt.sign(
-              { username, affiliation: userAffiliation, userType },
+              { username, affiliation, userType, userID },
               JWT_SECRET,
               {
                 expiresIn: "1h",

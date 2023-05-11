@@ -28,12 +28,9 @@ axios.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Handle token expiration, for example, by redirecting to the login page
-      // localStorage.removeItem('token');
-      // localStorage.removeItem('affiliation');
       Cookies.remove("token");
       Cookies.remove("affiliation");
-      router.push('/login'); // or the route name of your login page
+      router.push('/login'); 
     }
     return Promise.reject(error);
   }
