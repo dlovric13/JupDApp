@@ -13,10 +13,6 @@
       <v-snackbar v-model="snackbarVisible" :timeout="6000" color="success" top>
         Access request sent successfully
       </v-snackbar>
-      <div v-for="notification in notifications" :key="notification.id">
-        Your request for notebook "{{ notification.notebookName }}" has been
-        rejected.
-      </div>
       <h2 class="content-header text-white font-weight-bold py-2">
         <span @click="navigateToLanding">Jupyter Notebook Repository</span>
       </h2>
@@ -108,6 +104,18 @@
             </a>
           </li>
         </ul>
+          <div
+        v-for="notification in notifications"
+        :key="notification.id"
+        :class="[
+          'notification',
+          notification.status === 'approved' ? 'success' : 'fail',
+        ]"
+        @click="removeNotification(notification.id)"
+      >
+        Your request for notebook "{{ notification.notebookName }}" has been
+        {{ notification.status }}.
+      </div>
       </nav>
     </div>
     <div v-if="showDetails" class="pop-up-overlay">
@@ -243,6 +251,7 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
+  margin-bottom: 5%;
 }
 
 .pagination li {
@@ -384,6 +393,24 @@
   font-weight: bold;
   font-size: 20px;
 }
+
+.notification {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.notification.success {
+  border-color: #4caf50; /* green */
+  color: #4caf50;
+}
+
+.notification.fail {
+  border-color: #f44336; /* red */
+  color: #f44336;
+}
 </style>
 
 <script>
@@ -512,23 +539,23 @@ export default {
       return false;
     },
 
-     getButtonLabel() {
-    if (this.selectedRow) {
-      if (this.selectedRow.owner === this.userId) {
-        return "View notebook details";
-      } else if (this.selectedRow.ACL) {
-        const accessObj = this.selectedRow.ACL.accessList.find(
-          (access) => access.userId === this.userId
-        );
-        if (accessObj && accessObj.status === "approved") {
+    getButtonLabel() {
+      if (this.selectedRow) {
+        if (this.selectedRow.owner === this.userId) {
           return "View notebook details";
-        } else if (this.isRequestPending) {
-          return "Access requested";
+        } else if (this.selectedRow.ACL) {
+          const accessObj = this.selectedRow.ACL.accessList.find(
+            (access) => access.userId === this.userId
+          );
+          if (accessObj && accessObj.status === "approved") {
+            return "View notebook details";
+          } else if (this.isRequestPending) {
+            return "Access requested";
+          }
         }
       }
-    }
-    return "Request Access";
-  },
+      return "Request Access";
+    },
   },
   methods: {
     goBack() {
@@ -565,6 +592,12 @@ export default {
       Cookies.remove("username");
       Cookies.remove("userType");
       this.$router.push({ path: "/login" });
+    },
+
+    removeNotification(notificationId) {
+      this.notifications = this.notifications.filter(
+        (notification) => notification.id !== notificationId
+      );
     },
 
     async requestAccess() {
@@ -610,23 +643,39 @@ export default {
 
     async fetchUserRequests() {
       try {
-        const response = await axios.get(
-          "http://localhost:3000/notebook/requests"
-        );
-        const rejectedRequests = response.data
-          .map((notebook) => {
-            return notebook.requests.filter((request) => {
-              return (
-                request.username === this.user && request.status === "rejected"
-              );
-            });
-          })
-          .flat();
-        this.notifications = rejectedRequests;
+        const response = await axios.get("http://localhost:3000/notebook");
+
+        // Extract the notebooks
+        const notebooks = response.data;
+
+        // Loop over all notebooks
+        notebooks.forEach((notebook) => {
+          // Check if the notebook has an ACL
+          if (
+            notebook.Record &&
+            notebook.Record.ACL &&
+            notebook.Record.ACL.accessList
+          ) {
+            // Find the user's request in the ACL
+            const userRequest = notebook.Record.ACL.accessList.find(
+              (access) => access.userId === this.userId
+            );
+
+            // If a request is found, create a notification
+            if (userRequest && userRequest.status !== "pending") {
+              this.notifications.push({
+                id: notebook.Key,
+                notebookName: notebook.Record.name,
+                status: userRequest.status,
+              });
+            }
+          }
+        });
       } catch (error) {
         console.error("Error fetching user requests:", error);
       }
     },
+
     handleButtonClick() {
       if (this.getButtonLabel === "Request Access") {
         this.requestAccess();
