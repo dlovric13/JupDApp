@@ -158,7 +158,7 @@ export default {
     async approveRequest(request) {
       try {
         const response = await axios.post(
-          `http://localhost:3000/notebook/${request.id}/manage-access/${request.userId}/approve`
+          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/approve`
         );
         if (response.status === 200) {
           this.dialog = false;
@@ -175,7 +175,7 @@ export default {
     async rejectRequest(request) {
       try {
         const response = await axios.post(
-          `http://localhost:3000/notebook/${request.id}/manage-access/${request.userId}/reject`
+          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/reject`
         );
         if (response.status === 200) {
           this.dialog = false;
@@ -192,7 +192,7 @@ export default {
     async fetchRequests() {
       try {
         const response = await axios.get(
-          "http://localhost:3000/notebook/requests"
+          "http://localhost:3000/access/requests"
         );
         this.requests = response.data
           .map((notebook) => {
@@ -219,7 +219,7 @@ export default {
   async fetchApprovedUsers() {
   try {
     const response = await axios.get(
-      "http://localhost:3000/notebook/approved-users"
+      "http://localhost:3000/access/approved-users"
     );
     this.notebooks = response.data.map((notebook) => {
       // Extract the ACL accessList

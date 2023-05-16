@@ -8,11 +8,26 @@ import { loadFonts } from './plugins/webfontloader'
 import axios from "axios";
 import Cookies from "js-cookie";
 // Request interceptor to add the token to every request
+// axios.interceptors.request.use(
+//   (config) => {
+//      const token = Cookies.get("token");
+//     if (token) {
+//       config.headers["x-auth-token"] = token;
+//     }
+//     return config;
+//   },
+//   (error) => {
+//     return Promise.reject(error);
+//   }
+// );
+
 axios.interceptors.request.use(
   (config) => {
-     const token = Cookies.get("token");
-    if (token) {
-      config.headers["x-auth-token"] = token;
+    if (!config.url.includes("localhost:5000")) {
+      const token = Cookies.get("token");
+      if (token) {
+        config.headers["x-auth-token"] = token;
+      }
     }
     return config;
   },

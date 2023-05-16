@@ -8,6 +8,7 @@
 
 const notebookContract = require('./lib/notebookContract');
 const registerContract = require('./lib/registerContract');
+const accessContract = require('./lib/accessContract');
 
 module.exports.notebookContract = notebookContract;
-module.exports.contracts = [notebookContract, registerContract];
+module.exports.contracts = [notebookContract, registerContract, accessContract];

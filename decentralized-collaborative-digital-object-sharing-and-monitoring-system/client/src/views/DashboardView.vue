@@ -104,18 +104,16 @@
             </a>
           </li>
         </ul>
-          <div
-        v-for="notification in notifications"
-        :key="notification.id"
-        :class="[
-          'notification',
-          notification.status === 'approved' ? 'success' : 'fail',
-        ]"
-        @click="removeNotification(notification.id)"
-      >
-        Your request for notebook "{{ notification.notebookName }}" has been
-        {{ notification.status }}.
-      </div>
+         <v-alert
+      v-for="notification in notifications"
+      :key="notification.id"
+      :type="notification.status === 'approved' ? 'success' : 'error'"
+      closable
+      dense
+    >
+      Your request for notebook "{{ notification.notebookName }}" has been
+      {{ notification.status }}.
+    </v-alert>
       </nav>
     </div>
     <div v-if="showDetails" class="pop-up-overlay">
@@ -393,24 +391,6 @@
   font-weight: bold;
   font-size: 20px;
 }
-
-.notification {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: #f9f9f9;
-}
-
-.notification.success {
-  border-color: #4caf50; /* green */
-  color: #4caf50;
-}
-
-.notification.fail {
-  border-color: #f44336; /* red */
-  color: #f44336;
-}
 </style>
 
 <script>
@@ -593,13 +573,6 @@ export default {
       Cookies.remove("userType");
       this.$router.push({ path: "/login" });
     },
-
-    removeNotification(notificationId) {
-      this.notifications = this.notifications.filter(
-        (notification) => notification.id !== notificationId
-      );
-    },
-
     async requestAccess() {
       const token = Cookies.get("token");
       if (token) {
@@ -616,7 +589,7 @@ export default {
 
         try {
           const response = await axios.post(
-            `http://localhost:3000/notebook/request-access`,
+            `http://localhost:3000/access/request-access`,
             {
               username,
               notebookId,

@@ -29,9 +29,11 @@ app.use(jwtMiddleware);
 
 const notebookRoutes = require("./routes/notebookRoutes")(io); 
 const authRoutes = require("./routes/authRoutes");
+const accessRoutes = require("./routes/accessRoutes");
 
 app.use("/notebook", notebookRoutes);
 app.use("/auth", authRoutes);
+app.use("/access", accessRoutes);
 app.use("/api", authRoutes);
 
 

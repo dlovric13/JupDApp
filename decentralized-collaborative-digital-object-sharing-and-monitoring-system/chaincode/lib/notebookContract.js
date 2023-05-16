@@ -72,148 +72,37 @@ class NotebookContract extends Contract {
     return JSON.stringify(allResults);
   }
 
-  async requestAccess(
-    ctx,
-    notebookName,
-    username,
-    userId,
-    userType,
-    affiliation,
-    timestamp
-  ) {
-    console.log(
-      `Requesting access for user ${username} to notebook ${notebookName}`
-    );
-    const notebookAsBytes = await ctx.stub.getState(notebookName);
-    if (!notebookAsBytes || notebookAsBytes.length === 0) {
-      throw new Error(`${notebookName} does not exist`);
-    }
-    const notebook = JSON.parse(notebookAsBytes.toString());
-    notebook.ACL.accessList.push({
-      username: username,
-      userId: userId,
-      status: "pending",
-      userType: userType,
-      affiliation: affiliation,
-      timestamp: timestamp,
-    });
-    await ctx.stub.putState(
-      notebookName,
-      Buffer.from(stringify(deepSortObject(notebook)))
-    );
-  }
-
-  async manageAccess(ctx, notebookName, userId, action) {
-    const notebookAsBytes = await ctx.stub.getState(notebookName);
-    if (!notebookAsBytes || notebookAsBytes.length === 0) {
-      throw new Error(`${notebookName} does not exist`);
-    }
-
-    const notebook = JSON.parse(notebookAsBytes.toString());
-
-    if (action.toLowerCase() === "approve") {
-      const userAccess = notebook.ACL.accessList.find(
-        (entry) => entry.userId === userId
-      );
-      if (userAccess && userAccess.status === "pending") {
-        userAccess.status = "approved";
-        await ctx.stub.putState(
-          notebookName,
-          Buffer.from(stringify(deepSortObject(notebook)))
-        );
-      } else {
-        throw new Error(`No pending access request for user ID ${userId}`);
-      }
-    } else if (action.toLowerCase() === "reject") {
-      const userAccess = notebook.ACL.accessList.find(
-        (entry) => entry.userId === userId
-      );
-      if (userAccess && userAccess.status === "pending") {
-        userAccess.status = "rejected";
-        console.log("Notebook:", notebook);
-        await ctx.stub.putState(
-          notebookName,
-          Buffer.from(stringify(deepSortObject(notebook)))
-        );
-      } else {
-        throw new Error(`No pending access request for user ID ${userId}`);
-      }
-    } else {
-      throw new Error(`Invalid action: ${action}`);
-    }
-    return JSON.stringify({ message: "Access request managed successfully" });
-  }
-
-  async getRequests(ctx, adminId) {
-    const startKey = "";
-    const endKey = "";
-    const allRequests = [];
-
-    for await (const { key, value } of ctx.stub.getStateByRange(
-      startKey,
-      endKey
-    )) {
-      const strValue = Buffer.from(value).toString("utf8");
-      const record = JSON.parse(strValue);
-      if (record.docType === "notebook" && record.ACL.owner === adminId) {
-        const pendingRequests = record.ACL.accessList.filter(
-          (entry) => entry.status === "pending"
-        );
-        if (pendingRequests.length > 0) {
-          allRequests.push({
-            notebookId: key,
-            notebookName: record.name,
-            requests: pendingRequests,
-          });
+  async getNotebookHistory(ctx, notebookId) {
+    const historyIterator = await ctx.stub.getHistoryForKey(notebookId);
+    const history = [];
+    while (true) {
+      let historyRecord = await historyIterator.next();
+      console.log(historyRecord);
+      if (historyRecord.value && historyRecord.value.value) {
+        let jsonRes = {};
+        jsonRes.TxId = historyRecord.value.txId;
+        jsonRes.Timestamp = historyRecord.value.timestamp;
+        jsonRes.IsDelete = historyRecord.value.is_delete
+          ? historyRecord.value.is_delete.toString()
+          : "undefined";
+        try {
+          jsonRes.Value = JSON.parse(
+            historyRecord.value.value.toString("utf8")
+          );
+        } catch (err) {
+          console.log(err);
+          jsonRes.Value = historyRecord.value.value.toString("utf8");
         }
+        history.push(jsonRes);
+      }
+      if (historyRecord.done) {
+        await historyIterator.close();
+        console.info(history);
+        return history;
       }
     }
-    console.log(`Retrieved all requests: ${JSON.stringify(allRequests)}`);
-    return JSON.stringify(allRequests);
   }
 
-  // async getApprovedUsers(ctx, userId) {
-  //   const notebookAsBytes = await ctx.stub.getState(notebookName);
-  //   if (!notebookAsBytes || notebookAsBytes.length === 0) {
-  //     throw new Error(`${notebookName} does not exist`);
-  //   }
-  //   const notebook = JSON.parse(notebookAsBytes.toString());
-
-  //   // Check if the user is the owner of the notebook
-  //   if (notebook.ACL.owner !== userId) {
-  //     throw new Error("User is not authorized to view approved users");
-  //   }
-
-  //   const approvedUsers = notebook.ACL.accessList.filter(
-  //     (entry) => entry.status === "approved"
-  //   );
-  //   return JSON.stringify(approvedUsers);
-  // }
-
-  async getApprovedUsers(ctx, userId) {
-    const startKey = "";
-    const endKey = "";
-    const allResults = [];
-
-    for await (const { key, value } of ctx.stub.getStateByRange(
-      startKey,
-      endKey
-    )) {
-      const strValue = Buffer.from(value).toString("utf8");
-      const record = JSON.parse(strValue);
-
-      if (record.docType === "notebook" && record.ACL.owner === userId) {
-        const approvedUsers = record.ACL.accessList.filter(
-          (entry) => entry.status === "approved"
-        );
-        if (approvedUsers.length > 0) {
-          allResults.push({ Key: key, Record: record });
-        }
-      }
-    }
-    console.log(`Retrieved all notebooks: ${JSON.stringify(allResults)}`);
-    return JSON.stringify(allResults);
-  }
 
   async initializeLedger(ctx) {
     const notebook = {

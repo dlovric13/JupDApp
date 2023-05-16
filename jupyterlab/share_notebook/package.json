@@ -65,6 +65,7 @@
     "@jupyterlab/testutils": "^3.0.0",
     "@types/jest": "^26.0.0",
     "@types/js-cookie": "^3.0.3",
+    "@types/node": "^20.1.4",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "eslint": "^7.14.0",

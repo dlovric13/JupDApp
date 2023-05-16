@@ -76,7 +76,10 @@ export default {
         this.$router.push("/dashboard");
       } else if (option.label == "Admin dashboard") {
         this.$router.push("/requests");
+      }else if (option.label == "Shared projects") {
+        this.$router.push("/projects");
       }
+      
     },
 
     goBack() {
