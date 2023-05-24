@@ -58,7 +58,7 @@
                 class="custom-timeline-item expanded-content"
               >
                 <v-card>
-                  <v-card-title class="text-h6" >
+                  <v-card-title class="text-h6">
                     {{ convertTimestamp(item.Timestamp) }}
                     <v-btn text icon @click="item.expanded = !item.expanded">
                       <v-icon>{{
@@ -78,7 +78,7 @@
                       </div>
 
                       <h3>Notebook Content:</h3>
-                       <div v-html="notebookContent"></div>
+                      <div v-html="item.htmlContent"></div>
                     </div>
                     <p>Deleted: {{ item.IsDelete }}</p>
                     <v-btn color="blue-grey" variant="outlined"> Button </v-btn>
@@ -172,19 +172,27 @@ export default {
         const response = await axios.get(
           `http://localhost:3000/notebook/${notebookId}/history`
         );
-        this.notebookHistory = response.data
+        const notebookHistoryTemp = response.data
           .map((item) => ({
             ...item,
             expanded: false,
           }))
           .sort((a, b) => a.Timestamp.seconds - b.Timestamp.seconds);
-          const notebookContent = this.notebookHistory[this.notebookHistory.length - 1].Value;
-           const notebookFormattedContent = notebookContent.content; // Extracting the content field
-          console.log("Notebook content to be sent to the flask server:", notebookFormattedContent);
-        const htmlResponse = await axios.post('http://127.0.0.1:8000/convert', notebookFormattedContent);
-        this.notebookContent = htmlResponse.data.html;
+        for (let item of notebookHistoryTemp) {
+          const notebookContent = item.Value;
+          const notebookFormattedContent = notebookContent.content; 
+          console.log(
+            "Notebook content to be sent to the flask server:",
+            notebookFormattedContent
+          );
+          const htmlResponse = await axios.post(
+            "http://127.0.0.1:8000/convert",
+            notebookFormattedContent
+          );
+          item.htmlContent = htmlResponse.data.html;
+        }
+        this.notebookHistory = notebookHistoryTemp;
         console.log("Server Response:", response.data);
-        console.log("Notebook content from flask server", htmlResponse);
       } catch (error) {
         console.error("Error fetching notebook history:", error);
       }
@@ -307,10 +315,9 @@ export default {
 }
 
 .json-content {
-  max-height: 200px;  
+  max-height: 200px;
   overflow-y: auto;
 }
-
 
 .v-card-title {
   background-color: #1a77d2; /* this will change the v-card-title background color */
@@ -320,5 +327,4 @@ export default {
 .v-card {
   color: white; /* this will change the v-card text color */
 }
-
 </style>

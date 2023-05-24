@@ -56,6 +56,7 @@
   "dependencies": {
     "@jupyterlab/application": "^3.1.0",
     "js-cookie": "^3.0.1",
+    "js-sha256": "^0.9.0",
     "jwt-decode": "^3.1.2"
   },
   "devDependencies": {
@@ -65,7 +66,7 @@
     "@jupyterlab/testutils": "^3.0.0",
     "@types/jest": "^26.0.0",
     "@types/js-cookie": "^3.0.3",
-    "@types/node": "^20.1.4",
+    "@types/node": "^20.2.0",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "eslint": "^7.14.0",

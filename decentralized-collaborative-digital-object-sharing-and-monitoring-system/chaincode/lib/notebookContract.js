@@ -15,40 +15,54 @@ class NotebookContract extends Contract {
       throw new Error("Notebook name is missing or empty");
     }
 
-    const notebookContent = stringify(deepSortObject(notebook.content));
+    if (!notebook.owner || notebook.owner.trim() === "") {
+      throw new Error("Notebook owner is missing or empty");
+    }
+
     const hash = crypto.createHash("sha256");
-    hash.update(notebookContent);
-    const notebookHash = hash.digest("hex");
-    return `${notebook.name}_${notebookHash}`;
+    hash.update(notebook.owner);
+    const ownerHash = hash.digest("hex");
+    return `${notebook.name}_${ownerHash}`;
   }
 
   async storeNotebook(ctx, notebookJson) {
-    const notebook = JSON.parse(notebookJson);
-    notebook.docType = "notebook";
-    notebook.ACL = {
-      owner: notebook.owner,
-      accessList: [],
-    };
+    const newNotebook = JSON.parse(notebookJson);
+    newNotebook.docType = "notebook";
 
-    const notebookKey = await this.generateNotebookKey(notebook);
+    const notebookKey = await this.generateNotebookKey(newNotebook);
 
-    console.log(`Storing notebook ${JSON.stringify(notebook)}`);
+    // Fetch existing notebook from the ledger
+    const notebookAsBytes = await ctx.stub.getState(notebookKey);
+
+    if (notebookAsBytes && notebookAsBytes.length > 0) {
+      // If notebook already exists, preserve the existing ACL
+      const existingNotebook = JSON.parse(notebookAsBytes.toString());
+      newNotebook.ACL = existingNotebook.ACL;
+    } else {
+      // If notebook doesn't exist, create a new ACL
+      newNotebook.ACL = {
+        owner: newNotebook.owner,
+        accessList: [],
+      };
+    }
+
+    console.log(`Storing notebook ${JSON.stringify(newNotebook)}`);
     console.log(ctx);
 
     await ctx.stub.putState(
       notebookKey,
-      Buffer.from(stringify(deepSortObject(notebook)))
+      Buffer.from(stringify(deepSortObject(newNotebook)))
     );
     return notebookKey;
   }
 
-  async getNotebook(ctx, name) {
-    const notebookAsBytes = await ctx.stub.getState(name);
+  async getNotebook(ctx, notebookId) {
+    const notebookAsBytes = await ctx.stub.getState(notebookId);
     if (!notebookAsBytes || notebookAsBytes.length === 0) {
-      throw new Error(`${name} does not exist`);
+      throw new Error(`The notebook with id ${notebookId} does not exist`);
     }
-    const notebook = notebookAsBytes.toString();
-    console.log(`Retrieved notebook ${notebook}`);
+    const notebook = JSON.parse(notebookAsBytes.toString());
+    console.log(`Retrieved notebook ${JSON.stringify(notebook)}`);
     return notebook;
   }
 
@@ -102,7 +116,6 @@ class NotebookContract extends Contract {
       }
     }
   }
-
 
   async initializeLedger(ctx) {
     const notebook = {

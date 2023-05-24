@@ -60,7 +60,7 @@ async function storeNotebook(req, res, io) {
     );
     console.log(`Notebook stored: ${notebook}`);
     res.status(201).json({ message: "Notebook created" });
-
+    
     onNewNotebookShared(io);
 
     await gateway.disconnect();
@@ -135,14 +135,13 @@ async function getNotebookById(req, res) {
 
     const network = await gateway.getNetwork("mychannel");
     const contract = network.getContract("digitalobject");
-    const notebookContract = new NotebookContract();
 
     const notebook = await contract.evaluateTransaction(
       "NotebookContract:getNotebook",
       notebookId
     );
     console.log(`Notebook with ID ${notebookId}: ${notebook}`);
-    res.status(200).json(JSON.parse(notebooks.toString()));
+    res.status(200).json(JSON.parse(notebook.toString()));
 
     await gateway.disconnect();
   } catch (error) {

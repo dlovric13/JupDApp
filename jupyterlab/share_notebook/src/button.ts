@@ -182,7 +182,14 @@ export class ButtonExtension
         Authorization: `Bearer ${token}`
       }
     })
-      .then(result => result.json())
+      .then(result => {
+        if (result.ok) {
+          alert('Notebook was successfully shared.');
+          return result.json();
+        } else {
+          throw new Error(`Error sharing notebook: ${result.statusText}`);
+        }
+      })
       .then(jsonformat => console.log(jsonformat))
       .catch(error => console.error('Error sending data:', error));
   }

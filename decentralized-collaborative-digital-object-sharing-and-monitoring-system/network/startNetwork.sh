@@ -23,7 +23,7 @@ rm -rf ../backend/wallet/*
 pushd ../fabric-samples/test-network/
 ./network.sh down
 ./network.sh up createChannel -ca -s couchdb
-./network.sh deployCC -ccn digitalobject -ccv 1 -cci NotebookContract:initializeLedger -ccl javascript -ccp ../../chaincode/ -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
+./network.sh deployCC -ccn digitalobject -ccv 1 -ccl javascript -ccp ../../chaincode/ -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
 # ./network.sh deployCC -ccn digitalobject -ccv 1 -ccl javascript -ccp ../../chaincode/
 popd 
 

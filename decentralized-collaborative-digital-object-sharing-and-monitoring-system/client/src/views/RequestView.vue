@@ -16,9 +16,14 @@
       <v-container fluid>
         <v-row>
           <v-col cols="12">
-             <v-snackbar v-model="snackbarVisible" :timeout="6000" color="success" top>
-                   {{ snackbarMessage }}
-      </v-snackbar>
+            <v-snackbar
+              v-model="snackbarVisible"
+              :timeout="6000"
+              color="success"
+              top
+            >
+              {{ snackbarMessage }}
+            </v-snackbar>
             <h3>Requests</h3>
             <v-table class="data-table">
               <thead>
@@ -62,14 +67,83 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(notebook, index) in notebooks" :key="index">
+                <tr
+                  v-for="(notebook, index) in notebooks"
+                  :key="index"
+                  @click="showNotebookUsers(notebook)"
+                >
                   <td>{{ notebook.name }}</td>
-                  <td>{{ notebook.users.join(", ") }}</td>
+                  <td>{{ notebook.users.map(user => user.username).join(", ") }}</td>
                 </tr>
               </tbody>
             </v-table>
           </v-col>
         </v-row>
+        <v-dialog
+          v-model="dialogNotebookUsers"
+          fullscreen
+          :scrim="false"
+          transition="dialog-bottom-transition"
+        >
+          <v-card class="dialog-card">
+            <v-toolbar dark color="primary">
+              <v-btn icon dark @click="dialogNotebookUsers = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+              <v-toolbar-title>{{
+                selectedNotebook ? selectedNotebook.name : ""
+              }}</v-toolbar-title>
+              <v-spacer></v-spacer>
+              <v-toolbar-items>
+                <v-btn text @click="dialogNotebookUsers = false">Close</v-btn>
+              </v-toolbar-items>
+            </v-toolbar>
+            <v-list two-line subheader class="dialog-card-list">
+              <v-subheader>Users with view access</v-subheader>
+              <v-list-item
+                v-for="(user, index) in selectedNotebook.users"
+                :key="index"
+                :class="{ 'selected-user': selectedUser === user }"
+                @click="selectUser(user)"
+              >
+                <v-list-item-icon>
+                  <v-icon>mdi-account</v-icon>
+                </v-list-item-icon>
+              <v-list-item-content>{{ user.username }}</v-list-item-content>
+              </v-list-item>
+              <v-list-item-action>
+                <v-btn color="red" @click="removeViewAccess(user)"
+                  >Remove View Access</v-btn
+                >
+              </v-list-item-action>
+            </v-list>
+            <v-divider></v-divider>
+            <v-list two-line subheader class="dialog-card-list">
+              <v-subheader>Users with view access</v-subheader>
+              <v-list-item
+                v-for="(user, index) in selectedNotebook.users"
+                :key="index"
+                :class="{ 'selected-user': selectedUserEdit === user }"
+                @click="selectUserEdit(user)"
+              >
+                <v-list-item-icon>
+                  <v-icon>mdi-account</v-icon>
+                </v-list-item-icon>
+              <v-list-item-content>{{ user.username }}</v-list-item-content>
+              </v-list-item>
+              <v-list-item-action>
+                <v-btn-toggle>
+                  <v-btn color="green" @click="grantEditAccess(user)"
+                    >Grant Edit Access</v-btn
+                  >
+                  <v-btn color="red" @click="removeEditAccess(user)"
+                    >Remove Edit Access</v-btn
+                  >
+                </v-btn-toggle>
+              </v-list-item-action>
+            </v-list>
+          </v-card>
+        </v-dialog>
         <v-dialog v-model="dialog" max-width="800px">
           <v-card>
             <v-card-title> Request Details </v-card-title>
@@ -117,6 +191,10 @@ export default {
       selectedRequest: null,
       snackbarVisible: false,
       snackbarMessage: "",
+      dialogNotebookUsers: false,
+      selectedNotebook: null,
+      selectedUser: null,
+      selectedUserEdit: null,
       pagination: {
         page: 1,
         rowsPerPage: 5,
@@ -128,8 +206,7 @@ export default {
         { text: "Timestamp", value: "timestamp" },
       ],
       requests: [],
-      notebooks: [
-      ],
+      notebooks: [],
     };
   },
   computed: {
@@ -162,7 +239,7 @@ export default {
         );
         if (response.status === 200) {
           this.dialog = false;
-           request.status = "approved";
+          request.status = "approved";
           this.fetchRequests();
           this.snackbarMessage = "Access successfully granted";
           this.snackbarVisible = true;
@@ -180,8 +257,8 @@ export default {
         if (response.status === 200) {
           this.dialog = false;
           this.fetchRequests();
-            localStorage.removeItem(`requestedAccess_${request.userId}`);
-             this.snackbarMessage = "Access successfully denied";
+          localStorage.removeItem(`requestedAccess_${request.userId}`);
+          this.snackbarMessage = "Access successfully denied";
           this.snackbarVisible = true;
         }
       } catch (error) {
@@ -216,29 +293,77 @@ export default {
         console.error("Error fetching requests:", error);
       }
     },
-  async fetchApprovedUsers() {
+    async fetchApprovedUsers() {
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/access/approved-users"
+        );
+        this.notebooks = response.data.map((notebook) => {
+          // Extract the ACL accessList
+          console.log("Notebooks in fetchApprovedUsers", response.data);
+          const accessList = notebook.Record.ACL.accessList;
+
+          // Filter the list to only include approved users
+          const approvedUsers = accessList.filter(
+            (user) => user.status === "approved"
+          );
+
+          // Return an object containing the notebook name and the usernames of the approved users
+          return {
+            id: notebook.Key,
+            name: notebook.Record.name,
+            users: approvedUsers.map((user) => ({
+              username: user.username,
+              userId: user.userId,
+            })),
+          };
+        });
+        console.log("Fetched and formatted approved users", this.notebooks);
+      } catch (error) {
+        console.error("Error fetching approved users:", error);
+      }
+    },
+    showNotebookUsers(notebook) {
+      this.selectedNotebook = notebook;
+      this.dialogNotebookUsers = true;
+    },
+ 
+    async removeViewAccess() {
   try {
-    const response = await axios.get(
-      "http://localhost:3000/access/approved-users"
+    const response = await axios.post(
+      `http://localhost:3000/access/${this.selectedNotebook.id}/remove-access/${this.selectedUser.userId}`
     );
-    this.notebooks = response.data.map((notebook) => {
-      // Extract the ACL accessList
-      const accessList = notebook.Record.ACL.accessList;
+    console.log(response.data);
+    if (response.status === 200) {
+      this.snackbarMessage = `Access for user ${this.selectedUser.userId} removed successfully`;
+      this.snackbarVisible = true;
+      this.selectedNotebook.users = this.selectedNotebook.users.filter(user => user.userId !== this.selectedUser.userId);
 
-      // Filter the list to only include approved users
-      const approvedUsers = accessList.filter(user => user.status === "approved");
-
-      // Return an object containing the notebook name and the usernames of the approved users
-      return {
-        name: notebook.Record.name,
-        users: approvedUsers.map(user => user.username),
-      };
-    });
-    console.log("Fetched and formatted approved users", this.notebooks);
+     localStorage.removeItem(`requestedAccess_${this.selectedUser.userId}`);
+    
+    }
   } catch (error) {
-    console.error("Error fetching approved users:", error);
+    console.error(`Failed to remove access: ${error}`);
+    this.snackbarMessage = `Failed to remove access for user ${this.selectedUser.userId}`;
+    this.snackbarVisible = true;
   }
 },
+
+
+    toggleEditAccess(user) {
+      // add your logic to toggle edit access
+      console.log("toggle edit access for", user);
+    },
+
+    selectUser(user) {
+      this.selectedUser = user;
+      console.log("Selected user:", user);
+      // your logic here...
+    },
+    selectUserEdit(user) {
+      this.selectedUserEdit = user;
+      console.log("Selected user for edit:", user);
+    },
   },
   name: "RequestView",
 };
@@ -310,5 +435,42 @@ export default {
 
 .data-table tbody td {
   padding: 8px;
+}
+
+.dialog-card {
+  padding: 20px;
+  border-radius: 10px;
+  max-height: 70vh; /* added to prevent the card from growing too large */
+  overflow-y: auto; /* added to make the card scrollable */
+}
+
+.dialog-card .v-list-item {
+  margin-bottom: 15px; /* Add some bottom margin to prevent overlapping */
+}
+
+.dialog-card .v-list-item-content {
+  margin-right: 15px; /* Add some right margin to prevent overlapping */
+}
+
+.dialog-card .v-list-item-action {
+  flex-wrap: wrap; /* Allow the items to wrap to the next line if there isn't enough space */
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialog-card .v-btn {
+  margin: 5px 0; /* Add some vertical margin to the buttons */
+}
+
+.user-dialog .v-dialog {
+  max-width: 800px !important; /* Increase the max width */
+}
+
+.dialog-card-list {
+  padding-bottom: 20px; /* Add some padding to the bottom of the list */
+}
+
+.selected-user {
+  background-color: #a7a7a7;
 }
 </style>

@@ -104,16 +104,24 @@
             </a>
           </li>
         </ul>
-         <v-alert
-      v-for="notification in notifications"
-      :key="notification.id"
-      :type="notification.status === 'approved' ? 'success' : 'error'"
-      closable
-      dense
-    >
-      Your request for notebook "{{ notification.notebookName }}" has been
-      {{ notification.status }}.
-    </v-alert>
+        <v-alert
+          v-for="notification in notifications"
+          :key="notification.id"
+          :type="
+            notification.status === 'approved'
+              ? 'success'
+              : notification.status === 'removed'
+              ? 'error'
+              : 'warning'
+          "
+          closable
+          dense
+        >
+          Your request for notebook "{{ notification.notebookName }}" has been
+          {{
+            notification.status === "removed" ? "removed" : notification.status
+          }}.
+        </v-alert>
       </nav>
     </div>
     <div v-if="showDetails" class="pop-up-overlay">
@@ -138,260 +146,6 @@
 
 
 
-<style>
-.icon {
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  display: flex;
-  height: 100%;
-}
-
-.mdi-magnify {
-  padding-left: 10px;
-}
-
-.content {
-  flex: 1;
-  background-color: white;
-  overflow-y: auto;
-}
-
-.content-header {
-  background-color: #f27727;
-  color: white;
-  padding: 8px;
-  border-radius: 4px 4px 0 0;
-}
-
-.content-header span {
-  cursor: pointer;
-  transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
-}
-
-.content-header span:hover {
-  color: #1a77d2;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.search-container {
-  display: flex;
-  align-items: center;
-  border: 1px solid #f27727;
-  border-radius: 4px;
-  width: 20%;
-  margin-left: 2%;
-}
-
-.search-container input {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: #333;
-  font-size: 14px;
-  font-weight: 400;
-  padding: 8px 16px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.search-container input:focus {
-  border-color: #1a77d2;
-}
-
-.data-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.data-table-header {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-
-.data-table td,
-.data-table th {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-
-.data-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.data-table tr:hover {
-  background-color: #ddd;
-}
-
-.data-table .pagination {
-  display: inline-block;
-  margin: 0 auto;
-}
-
-.data-table .highlight {
-  background-color: #ffffaa;
-  animation: remove-background 2s ease 2s forwards;
-}
-
-@keyframes remove-background {
-  from {
-    background-color: #ffffaa;
-  }
-  to {
-    background-color: transparent;
-  }
-}
-
-.pagination {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  margin-bottom: 5%;
-}
-
-.pagination li {
-  list-style: none;
-  margin: 0 8px;
-}
-
-.pagination a {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: #1a77d2;
-  font-size: 14px;
-  font-weight: 700;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  outline: none;
-}
-
-.pagination a:hover,
-.pagination a:focus {
-  background-color: #eee;
-}
-
-.pagination .active a {
-  background-color: #1a77d2;
-  color: white;
-}
-
-.pagination .disabled a {
-  color: #ccc;
-  cursor: not-allowed;
-}
-
-.pop-up-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.popup-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.pop-up-window {
-  position: relative;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 80%;
-  max-width: 600px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  overflow: hidden;
-  padding: 20px;
-}
-
-.pop-up-window .close-button {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: #999;
-  font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  outline: none;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.pop-up-window .request-access-button {
-  background-color: #1a77d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: bold;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  width: fit-content;
-}
-
-.pop-up-window .request-access-button:hover {
-  background-color: #1e8fce;
-}
-
-.content h2.content-header {
-  padding: 100px;
-}
-
-.sidebar.collapsed .content h2.content-header {
-  text-indent: 0;
-}
-
-.welcome-card {
-  background-color: #44547d;
-  color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
-  margin-right: 2%;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.welcome-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
-}
-
-.user-icon {
-  font-size: 24px;
-}
-
-.search-welcome-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.welcome-card-title {
-  font-weight: bold;
-  font-size: 20px;
-}
-</style>
 
 <script>
 import axios from "axios";
@@ -710,3 +464,258 @@ export default {
   },
 };
 </script>
+
+<style>
+.icon {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  height: 100%;
+}
+
+.mdi-magnify {
+  padding-left: 10px;
+}
+
+.content {
+  flex: 1;
+  background-color: white;
+  overflow-y: auto;
+}
+
+.content-header {
+  background-color: #f27727;
+  color: white;
+  padding: 8px;
+  border-radius: 4px 4px 0 0;
+}
+
+.content-header span {
+  cursor: pointer;
+  transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
+}
+
+.content-header span:hover {
+  color: #1a77d2;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #f27727;
+  border-radius: 4px;
+  width: 20%;
+  margin-left: 2%;
+}
+
+.search-container input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 8px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-container input:focus {
+  border-color: #1a77d2;
+}
+
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.data-table-header {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.data-table td,
+.data-table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.data-table tr:hover {
+  background-color: #ddd;
+}
+
+.data-table .pagination {
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.data-table .highlight {
+  background-color: #ffffaa;
+  animation: remove-background 2s ease 2s forwards;
+}
+
+@keyframes remove-background {
+  from {
+    background-color: #ffffaa;
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin-bottom: 5%;
+}
+
+.pagination li {
+  list-style: none;
+  margin: 0 8px;
+}
+
+.pagination a {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #1a77d2;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.pagination a:hover,
+.pagination a:focus {
+  background-color: #eee;
+}
+
+.pagination .active a {
+  background-color: #1a77d2;
+  color: white;
+}
+
+.pagination .disabled a {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.pop-up-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pop-up-window {
+  position: relative;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 80%;
+  max-width: 600px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.pop-up-window .close-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #999;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.pop-up-window .request-access-button {
+  background-color: #1a77d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  width: fit-content;
+}
+
+.pop-up-window .request-access-button:hover {
+  background-color: #1e8fce;
+}
+
+.content h2.content-header {
+  padding: 100px;
+}
+
+.sidebar.collapsed .content h2.content-header {
+  text-indent: 0;
+}
+
+.welcome-card {
+  background-color: #44547d;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-right: 2%;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.welcome-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-icon {
+  font-size: 24px;
+}
+
+.search-welcome-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.welcome-card-title {
+  font-weight: bold;
+  font-size: 20px;
+}
+</style>

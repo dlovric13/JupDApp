@@ -210,8 +210,58 @@ async function getApprovedUsers(req, res) {
   }
 }
 
+async function removeAccess(req, res) {
+  const notebookId = req.params.id;
+  const userId = req.params.userId;
+
+  try {
+    const walletPath = path.join(__dirname, "..", "wallet", "org1");
+    const wallet = await Wallets.newFileSystemWallet(walletPath);
+    console.log(`Wallet path: ${walletPath}`);
+
+    const userExists = await wallet.get("admin");
+    if (!userExists) {
+      console.log(
+        'An identity for the user "user1" does not exist in the wallet'
+      );
+      console.log("Run the registerUser.js application before retrying");
+      return;
+    }
+
+    const gateway = new Gateway();
+    await gateway.connect(ccp, {
+      wallet,
+      identity: "admin",
+      discovery: { enabled: true, asLocalhost: true },
+      timeout: gatewayTimeout,
+    });
+
+    const network = await gateway.getNetwork("mychannel");
+    const contract = network.getContract("digitalobject");
+
+    await contract.submitTransaction(
+      "AccessContract:removeAccess",
+      notebookId,
+      userId
+    );
+    console.log(
+      `Access for notebook ID ${notebookId} and user ID ${userId} was removed`
+    );
+    res.status(200).json({ message: "Access removed" });
+
+    await gateway.disconnect();
+  } catch (error) {
+    console.error(`Failed to remove access: ${error}`);
+    res.status(500).send("Failed to remove access");
+  }
+}
+
+
+
+
 router.post("/request-access", requestAccess);
 router.post("/:id/manage-access/:userId/:action", manageAccess);
+router.post("/:id/remove-access/:userId", removeAccess);
 router.get("/requests", getRequests);
 router.get("/approved-users", getApprovedUsers);
 

@@ -4,7 +4,6 @@ const { Contract } = require("fabric-contract-api");
 const stringify = require("json-stable-stringify-without-jsonify");
 const deepSortObject = require("deep-sort-object");
 
-
 class AccessContract extends Contract {
   constructor() {
     super("AccessContract");
@@ -27,14 +26,23 @@ class AccessContract extends Contract {
       throw new Error(`${notebookName} does not exist`);
     }
     const notebook = JSON.parse(notebookAsBytes.toString());
-    notebook.ACL.accessList.push({
-      username: username,
-      userId: userId,
-      status: "pending",
-      userType: userType,
-      affiliation: affiliation,
-      timestamp: timestamp,
-    });
+    
+    const userAccess = notebook.ACL.accessList
+      .filter((entry) => entry.userId === userId, null)
+
+    if (userAccess.length === 0) {
+      notebook.ACL.accessList.push({
+        username: username,
+            userId: userId,
+            status: "pending",
+            userType: userType,
+            affiliation: affiliation,
+            timestamp: timestamp,
+          });
+    } else {
+      userAccess[0].status = "pending";
+    }
+
     await ctx.stub.putState(
       notebookName,
       Buffer.from(stringify(deepSortObject(notebook)))
@@ -49,10 +57,20 @@ class AccessContract extends Contract {
 
     const notebook = JSON.parse(notebookAsBytes.toString());
 
+    const userAccess = notebook.ACL.accessList
+      .filter((entry) => entry.userId === userId)
+      .reduce((latest, entry) => {
+        return !latest || new Date(entry.timestamp) > new Date(latest.timestamp)
+          ? entry
+          : latest;
+      }, null);
     if (action.toLowerCase() === "approve") {
-      const userAccess = notebook.ACL.accessList.find(
-        (entry) => entry.userId === userId
-      );
+      // const userAccess = notebook.ACL.accessList.find(
+      //   (entry) => entry.userId === userId
+      // );
+
+      console.log(notebook.ACL.accessList);
+      console.log("User access", userAccess);
       if (userAccess && userAccess.status === "pending") {
         userAccess.status = "approved";
         await ctx.stub.putState(
@@ -63,9 +81,6 @@ class AccessContract extends Contract {
         throw new Error(`No pending access request for user ID ${userId}`);
       }
     } else if (action.toLowerCase() === "reject") {
-      const userAccess = notebook.ACL.accessList.find(
-        (entry) => entry.userId === userId
-      );
       if (userAccess && userAccess.status === "pending") {
         userAccess.status = "rejected";
         console.log("Notebook:", notebook);
@@ -133,6 +148,29 @@ class AccessContract extends Contract {
     }
     console.log(`Retrieved all notebooks: ${JSON.stringify(allResults)}`);
     return JSON.stringify(allResults);
+  }
+
+  async removeAccess(ctx, notebookName, userId) {
+    const notebookAsBytes = await ctx.stub.getState(notebookName);
+    if (!notebookAsBytes || notebookAsBytes.length === 0) {
+      throw new Error(`${notebookName} does not exist`);
+    }
+    const notebook = JSON.parse(notebookAsBytes.toString());
+
+    const userAccess = notebook.ACL.accessList.find(
+      (entry) => entry.userId === userId
+    );
+    if (userAccess) {
+      userAccess.status = "removed";
+      await ctx.stub.putState(
+        notebookName,
+        Buffer.from(stringify(deepSortObject(notebook)))
+      );
+    } else {
+      throw new Error(`No access granted to user ID ${userId}`);
+    }
+
+    return JSON.stringify({ message: "Access removed successfully" });
   }
 }
 module.exports = AccessContract;
