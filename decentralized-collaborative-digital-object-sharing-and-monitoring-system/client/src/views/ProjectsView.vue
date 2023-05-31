@@ -72,16 +72,54 @@
                   >
                     <p>Transaction ID: {{ item.TxId }}</p>
                     <div>
-                      <div class="json-content">
+                      <!-- <div class="json-content">
                         <p>Value:</p>
                         <pre>{{ prettifyJSON(item.Value) }}</pre>
+                      </div> -->
+                      <div class="detail-container">
+                      <h3 >Access Control List</h3>
+                      <div v-if="item.Value.ACL">
+                        <div
+                          v-for="(user, index) in item.Value.ACL.accessList"
+                          :key="index"
+                          class="user-access-details"
+                        >
+                          <p>Username: {{ user.username }}</p>
+                          <p>User ID: {{ user.userId }}</p>
+                          <p>User Type: {{ user.userType }}</p>
+                          <p>View Access: {{ user.status }}</p>
+                          <p>Edit Access: {{ user.hasEditAccess }}</p>
+                          <p>Affiliation: {{ user.affiliation }}</p>
+                          <p>View Access Requested: {{ user.timestamp }}</p>
+                        </div>
+                      </div>
                       </div>
 
+                      <!-- Owner Details -->
+                      <div class="detail-container">
+                      <h3>Owner Details</h3>
+                      <p v-if="item.Value.ACL">
+                        Owner ID: {{ item.Value.ACL.owner }}
+                      </p>
+                      </div>
+                      <div class="detail-container">
+                      <!-- Notebook Details -->
+                      <h3>Notebook Details</h3>
+                      <p v-if="item.Value">
+                        Last Modified: {{ item.Value.last_modified }}
+                      </p>
+                      <p v-if="item.Value">Size: {{ item.Value.size }}</p>
+                      <p v-if="item.Value">
+                        Document Type: {{ item.Value.docType }}
+                      </p>
+                      </div>
+                      <div class="detail-container">
                       <h3>Notebook Content:</h3>
                       <div v-html="item.htmlContent"></div>
                     </div>
+                    </div>
                     <p>Deleted: {{ item.IsDelete }}</p>
-                    <v-btn color="blue-grey" variant="outlined"> Button </v-btn>
+                    <!-- <v-btn color="blue-grey" variant="outlined"> Button </v-btn> -->
                   </v-card-text>
                 </v-card>
               </v-timeline-item>
@@ -180,7 +218,7 @@ export default {
           .sort((a, b) => a.Timestamp.seconds - b.Timestamp.seconds);
         for (let item of notebookHistoryTemp) {
           const notebookContent = item.Value;
-          const notebookFormattedContent = notebookContent.content; 
+          const notebookFormattedContent = notebookContent.content;
           console.log(
             "Notebook content to be sent to the flask server:",
             notebookFormattedContent
@@ -326,5 +364,22 @@ export default {
 
 .v-card {
   color: white; /* this will change the v-card text color */
+}
+
+.detail-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.detail-container h3 {
+  color: #1a77d2;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 5px;
+}
+
+.detail-container p {
+  margin-left: 20px;
 }
 </style>

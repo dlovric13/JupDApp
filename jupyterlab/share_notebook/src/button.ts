@@ -5,6 +5,7 @@ import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
 import { IDisposable } from '@lumino/disposable';
 import { requestAPI } from './handler';
 import jwt_decode from 'jwt-decode';
+import * as CryptoJS from 'crypto-js';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 interface _DecodeToken {
@@ -35,13 +36,42 @@ export class ButtonExtension
     // Add the toolbar button to the notebook toolbar
     panel.toolbar.insertItem(10, 'mybutton', mybutton);
 
-    // The ToolbarButton class implements `IDisposable`, so the
-    // button *is* the extension for the purposes of this method.
-
-    // console.log('get notebook executed', this.get_notebook(context));
-    // this.openWebSocket(context);
-    // console.log('web socket opened');
     return mybutton;
+  }
+
+  async createHash(input: string): Promise<string> {
+    const hash = CryptoJS.SHA256(input);
+    return hash.toString(CryptoJS.enc.Hex);
+  }
+
+  async fetchEditAccess(
+    notebookId: string,
+    userId: string,
+    token: string
+  ): Promise<boolean> {
+    const response = await fetch(
+      `http://localhost:3000/access/get-edit-access/${notebookId}/${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        credentials: 'include'
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.hasEditAccess;
+    } else {
+      const data = await response.json();
+      console.error(
+        'Failed to get the edit access from the server:',
+        data.message
+      );
+      return false;
+    }
   }
 
   async fetchToken() {
@@ -99,6 +129,7 @@ export class ButtonExtension
     // Fetch the token
     const token = await this.fetchToken();
     console.log('Token fetched');
+
     // If a token is available, proceed with the request
     if (token) {
       const decodedToken: _DecodeToken = jwt_decode(token);
@@ -106,21 +137,33 @@ export class ButtonExtension
       const userType = decodedToken.userType;
       console.log('userId', userId);
       console.log('userType', userType);
+
+      // Store the userId in localStorage if userType is 'admin'
       if (userType === 'admin') {
-        requestAPI<any>(`/api/contents/${path}`)
-          .then(data => {
-            this.send_data(data, token, userId);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            const socket = this.createWebSocketConnection(token);
-          })
-          .catch(reason => {
-            console.error(
-              `The tutorial_extension server extension appears to be missing.\n${reason}`
-            );
-          });
+        localStorage.setItem('adminUserId', userId);
+      }
+
+      // If the userType is 'admin', use the userId from localStorage
+      // Otherwise, use the userId from the token
+      const localStorageUserId = localStorage.getItem('adminUserId');
+      const idForHash = localStorageUserId ? localStorageUserId : userId;
+
+      const hash = await this.createHash(idForHash);
+      const notebookId = `${path}_${hash}`;
+      console.log('Notebook id', notebookId);
+      if (userType === 'admin') {
+        this.shareNotebook(path, token, userId, userType);
       } else {
-        alert('You are not authorized to share the notebook.');
+        const hasEditAccess = await this.fetchEditAccess(
+          notebookId,
+          userId,
+          token
+        );
+        if (hasEditAccess) {
+          this.shareNotebook(path, token, userId, userType);
+        } else {
+          alert('You are not authorized to share the notebook.');
+        }
       }
     } else {
       console.error('Failed to fetch token');
@@ -164,14 +207,41 @@ export class ButtonExtension
     return socket;
   }
 
+  async shareNotebook(
+    path: string,
+    token: string,
+    userId: string,
+    userType: string
+  ) {
+    requestAPI<any>(`/api/contents/${path}`)
+      .then(data => {
+        this.send_data(data, token, userId, userType);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const socket = this.createWebSocketConnection(token);
+      })
+      .catch(reason => {
+        console.error(
+          `The tutorial_extension server extension appears to be missing.\n${reason}`
+        );
+      });
+  }
+
   async send_data(
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     dataToSend: any,
     token: string,
-    userId: string
+    userId: string,
+    userType: string
   ): Promise<void> {
     // Include the owner's userId in the notebook JSON
-    dataToSend.owner = userId;
+    if (userType === 'admin') {
+      dataToSend.owner = userId;
+    } else {
+      const ownerId = localStorage.getItem('adminUserId');
+      dataToSend.owner = ownerId;
+    }
+    // dataToSend.owner = userId;
     console.log(dataToSend);
     console.log('Token in send_data:', token);
     fetch('http://localhost:3000/notebook', {

@@ -43,8 +43,6 @@
           >
             {{ header.label }}
           </th>
-          <th class="data-table-header font-weight-bold">Download</th>
-          <th class="data-table-header font-weight-bold">Edit</th>
         </tr>
         <tr
           v-for="row in paginatedRows"
@@ -55,16 +53,6 @@
         >
           <td v-for="cell in row.cells" :key="cell.id">
             {{ cell.value }}
-          </td>
-          <td>
-            <a href="#" @click.prevent="downloadRow(row)"
-              ><i class="mdi mdi-download"></i
-            ></a>
-          </td>
-          <td>
-            <a href="#" @click.prevent="editRow(row)"
-              ><i class="mdi mdi-pencil"></i
-            ></a>
           </td>
         </tr>
       </table>
@@ -310,13 +298,6 @@ export default {
       this.selectedRow = row;
       this.showDetails = true;
     },
-    // downloadRow(row) {
-    //   // Add code to handle the download of the specified row here
-    // },
-    // editRow(row) {
-    //   // Add code to handle the edit of the specified row here
-    // },
-
     navigateToLanding() {
       this.$router.push({ path: "/" });
     },
@@ -359,11 +340,9 @@ export default {
             // Handle other status codes or show an error message
           }
         } catch (error) {
-          // Handle request errors, e.g., network issues or server errors
           console.error("Error requesting access:", error);
         }
       } else {
-        // Handle the case when there's no token available
         console.error("No token found");
       }
     },

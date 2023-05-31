@@ -73,7 +73,9 @@
                   @click="showNotebookUsers(notebook)"
                 >
                   <td>{{ notebook.name }}</td>
-                  <td>{{ notebook.users.map(user => user.username).join(", ") }}</td>
+                  <td>
+                    {{ notebook.users.map((user) => user.username).join(", ") }}
+                  </td>
                 </tr>
               </tbody>
             </v-table>
@@ -109,7 +111,7 @@
                 <v-list-item-icon>
                   <v-icon>mdi-account</v-icon>
                 </v-list-item-icon>
-              <v-list-item-content>{{ user.username }}</v-list-item-content>
+                <v-list-item-content>{{ user.username }}</v-list-item-content>
               </v-list-item>
               <v-list-item-action>
                 <v-btn color="red" @click="removeViewAccess(user)"
@@ -124,23 +126,30 @@
                 v-for="(user, index) in selectedNotebook.users"
                 :key="index"
                 :class="{ 'selected-user': selectedUserEdit === user }"
-                @click="selectUserEdit(user)"
               >
                 <v-list-item-icon>
                   <v-icon>mdi-account</v-icon>
                 </v-list-item-icon>
-              <v-list-item-content>{{ user.username }}</v-list-item-content>
-              </v-list-item>
-              <v-list-item-action>
-                <v-btn-toggle>
+                <v-list-item-content>{{ user.username }}</v-list-item-content>
+                <v-list-item-content class="v-list-item-content-edit">
+                <v-list-item-action>
+                  <!-- <v-btn-toggle>
                   <v-btn color="green" @click="grantEditAccess(user)"
                     >Grant Edit Access</v-btn
                   >
                   <v-btn color="red" @click="removeEditAccess(user)"
                     >Remove Edit Access</v-btn
                   >
-                </v-btn-toggle>
-              </v-list-item-action>
+                </v-btn-toggle> -->
+                  <v-checkbox
+                     v-model="user.hasEditAccess"
+                    label="Edit Access"
+                    color="green"
+                    @change="toggleEditAccess(user)"
+                  ></v-checkbox>
+                </v-list-item-action>
+                </v-list-item-content>
+              </v-list-item>
             </v-list>
           </v-card>
         </v-dialog>
@@ -315,6 +324,7 @@ export default {
             users: approvedUsers.map((user) => ({
               username: user.username,
               userId: user.userId,
+              hasEditAccess: user.hasEditAccess,
             })),
           };
         });
@@ -323,36 +333,51 @@ export default {
         console.error("Error fetching approved users:", error);
       }
     },
+
+    async toggleEditAccess(user) {
+      try {
+        const response = await axios.post(
+          `http://localhost:3000/access/${this.selectedNotebook.id}/toggle-edit-access/${user.userId}`
+        );
+        if (response.status === 200) {
+          user.hasEditAccess = response.data.hasEditAccess; // Update the local state of the user's edit access
+          this.snackbarMessage = `Edit access for user ${user.userId} toggled successfully`;
+          this.snackbarVisible = true;
+        }
+      } catch (error) {
+        console.error(`Failed to toggle edit access: ${error}`);
+        this.snackbarMessage = `Failed to toggle edit access for user ${user.userId}`;
+        this.snackbarVisible = true;
+      }
+    },
+
     showNotebookUsers(notebook) {
       this.selectedNotebook = notebook;
       this.dialogNotebookUsers = true;
     },
- 
+
     async removeViewAccess() {
-  try {
-    const response = await axios.post(
-      `http://localhost:3000/access/${this.selectedNotebook.id}/remove-access/${this.selectedUser.userId}`
-    );
-    console.log(response.data);
-    if (response.status === 200) {
-      this.snackbarMessage = `Access for user ${this.selectedUser.userId} removed successfully`;
-      this.snackbarVisible = true;
-      this.selectedNotebook.users = this.selectedNotebook.users.filter(user => user.userId !== this.selectedUser.userId);
+      try {
+        const response = await axios.post(
+          `http://localhost:3000/access/${this.selectedNotebook.id}/remove-access/${this.selectedUser.userId}`
+        );
+        console.log(response.data);
+        if (response.status === 200) {
+          this.snackbarMessage = `Access for user ${this.selectedUser.userId} removed successfully`;
+          this.snackbarVisible = true;
+          this.selectedNotebook.users = this.selectedNotebook.users.filter(
+            (user) => user.userId !== this.selectedUser.userId
+          );
 
-     localStorage.removeItem(`requestedAccess_${this.selectedUser.userId}`);
-    
-    }
-  } catch (error) {
-    console.error(`Failed to remove access: ${error}`);
-    this.snackbarMessage = `Failed to remove access for user ${this.selectedUser.userId}`;
-    this.snackbarVisible = true;
-  }
-},
-
-
-    toggleEditAccess(user) {
-      // add your logic to toggle edit access
-      console.log("toggle edit access for", user);
+          localStorage.removeItem(
+            `requestedAccess_${this.selectedUser.userId}`
+          );
+        }
+      } catch (error) {
+        console.error(`Failed to remove access: ${error}`);
+        this.snackbarMessage = `Failed to remove access for user ${this.selectedUser.userId}`;
+        this.snackbarVisible = true;
+      }
     },
 
     selectUser(user) {
@@ -472,5 +497,11 @@ export default {
 
 .selected-user {
   background-color: #a7a7a7;
+}
+
+.v-list-item-content-edit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 </style>

@@ -26,19 +26,21 @@ class AccessContract extends Contract {
       throw new Error(`${notebookName} does not exist`);
     }
     const notebook = JSON.parse(notebookAsBytes.toString());
-    
-    const userAccess = notebook.ACL.accessList
-      .filter((entry) => entry.userId === userId, null)
+
+    const userAccess = notebook.ACL.accessList.filter(
+      (entry) => entry.userId === userId,
+      null
+    );
 
     if (userAccess.length === 0) {
       notebook.ACL.accessList.push({
         username: username,
-            userId: userId,
-            status: "pending",
-            userType: userType,
-            affiliation: affiliation,
-            timestamp: timestamp,
-          });
+        userId: userId,
+        status: "pending",
+        userType: userType,
+        affiliation: affiliation,
+        timestamp: timestamp,
+      });
     } else {
       userAccess[0].status = "pending";
     }
@@ -162,6 +164,7 @@ class AccessContract extends Contract {
     );
     if (userAccess) {
       userAccess.status = "removed";
+      userAccess.hasEditAccess = false;
       await ctx.stub.putState(
         notebookName,
         Buffer.from(stringify(deepSortObject(notebook)))
@@ -171,6 +174,34 @@ class AccessContract extends Contract {
     }
 
     return JSON.stringify({ message: "Access removed successfully" });
+  }
+  async toggleEditAccess(ctx, notebookName, userId) {
+    const notebookAsBytes = await ctx.stub.getState(notebookName);
+    if (!notebookAsBytes || notebookAsBytes.length === 0) {
+      throw new Error(`${notebookName} does not exist`);
+    }
+    const notebook = JSON.parse(notebookAsBytes.toString());
+
+    const userAccess = notebook.ACL.accessList.find(
+      (entry) => entry.userId === userId
+    );
+
+    if (userAccess) {
+      if (userAccess.status === "approved") {
+        // Toggle the hasEditAccess property
+        userAccess.hasEditAccess = !userAccess.hasEditAccess;
+        await ctx.stub.putState(
+          notebookName,
+          Buffer.from(stringify(deepSortObject(notebook)))
+        );
+      } else {
+        throw new Error(`User ID ${userId} has not been approved`);
+      }
+    } else {
+      throw new Error(`No access granted to user ID ${userId}`);
+    }
+
+    return JSON.stringify({ hasEditAccess: userAccess.hasEditAccess });
   }
 }
 module.exports = AccessContract;
