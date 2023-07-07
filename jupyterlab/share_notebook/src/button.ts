@@ -21,13 +21,6 @@ export class ButtonExtension
     panel: NotebookPanel,
     context: DocumentRegistry.IContext<INotebookModel>
   ): IDisposable {
-    // this.sendMockRequest();
-    setTimeout(() => {
-      this.sendMockRequest().catch(err => {
-        console.error('Error sending mock request:', err);
-      });
-    }, 10000);
-
     const mybutton = new ToolbarButton({
       label: 'Share Notebook',
       onClick: () => this.get_notebook(context)
@@ -97,26 +90,6 @@ export class ButtonExtension
       console.error('Error fetching the token from the server:', error);
     }
     return null;
-  }
-
-  async sendMockRequest() {
-    try {
-      const response = await fetch('http://localhost:3000/api/ping', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        console.log('Mock request succeeded');
-      } else {
-        console.error('Mock request failed:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error sending mock request:', error);
-    }
   }
 
   async get_notebook(

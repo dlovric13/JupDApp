@@ -10,8 +10,17 @@ function onNewNotebookShared(wss) {
 }
 
 
+function onAccessRemoved(wss, data) {
+  // Emit the accessRemoved event to all connected clients with the notebookId and userId
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ event: "accessRemoved", data }));
+    }
+  });
+}
+
 function initWebSocket(server) {
-const wss = new WebSocket.Server({ server, path: "/ws" });
+global.wss = new WebSocket.Server({ server, path: "/ws" });
 
 
   wss.on("connection", (socket) => {
@@ -34,4 +43,5 @@ const wss = new WebSocket.Server({ server, path: "/ws" });
 module.exports = {
   initWebSocket,
   onNewNotebookShared,
+  onAccessRemoved,
 };

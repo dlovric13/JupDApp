@@ -51,7 +51,7 @@ class AccessContract extends Contract {
     );
   }
 
-  async manageAccess(ctx, notebookName, userId, action) {
+  async manageAccess(ctx, notebookName, userId, action, expiryDate) {
     const notebookAsBytes = await ctx.stub.getState(notebookName);
     if (!notebookAsBytes || notebookAsBytes.length === 0) {
       throw new Error(`${notebookName} does not exist`);
@@ -67,14 +67,17 @@ class AccessContract extends Contract {
           : latest;
       }, null);
     if (action.toLowerCase() === "approve") {
-      // const userAccess = notebook.ACL.accessList.find(
-      //   (entry) => entry.userId === userId
-      // );
-
       console.log(notebook.ACL.accessList);
       console.log("User access", userAccess);
       if (userAccess && userAccess.status === "pending") {
         userAccess.status = "approved";
+        userAccess.expiryDate = expiryDate;
+        if (expiryDate === "9999-12-31T23:59:59.000Z") {
+          // if expiry date is 'indefinite'
+          userAccess.indefiniteAccess = true; // Add an attribute to signify indefinite access
+        } else {
+          userAccess.indefiniteAccess = false;
+        }
         await ctx.stub.putState(
           notebookName,
           Buffer.from(stringify(deepSortObject(notebook)))
@@ -202,6 +205,48 @@ class AccessContract extends Contract {
     }
 
     return JSON.stringify({ hasEditAccess: userAccess.hasEditAccess });
+  }
+
+  async checkExpiry(ctx, notebookName, userId) {
+    const notebookAsBytes = await ctx.stub.getState(notebookName);
+    if (!notebookAsBytes || notebookAsBytes.length === 0) {
+      throw new Error(`${notebookName} does not exist`);
+    }
+    const notebook = JSON.parse(notebookAsBytes.toString());
+    let updateNotebookState = false;
+
+         notebook.ACL.accessList.forEach((userAccess) => {
+           if (userAccess.userId === userId) {
+             // Check if indefiniteAccess is true. If yes, skip this iteration
+             if (userAccess.indefiniteAccess) {
+               console.log("Infinite access for user ID", userId);
+               return true;
+             }
+
+             if (userAccess.status === "approved" && userAccess.expiryDate && userAccess.indefiniteAccess === false) {
+               if (new Date(Date.now()) > new Date(userAccess.expiryDate)) {
+                 userAccess.status = "expired";
+                 updateNotebookState = true;
+                 return false;
+               }
+             } else if (userAccess.status === "pending") {
+               console.log("Access still pending for user ID", userId);
+             }
+           }
+            return true;
+         });
+
+    // Update the state only once, after all userAccess has been checked
+    if (updateNotebookState) {
+      console.log("At least one user's access expired");
+      await ctx.stub.putState(
+        notebookName,
+        Buffer.from(stringify(deepSortObject(notebook)))
+      );
+      return JSON.stringify({ message: "Access expired" });
+    } else {
+      return JSON.stringify({ message: "Access not expired" });
+    }
   }
 }
 module.exports = AccessContract;

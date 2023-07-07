@@ -10,6 +10,7 @@ const app = express();
 const { redisClient} = require("./redisSetup");
 const server = http.createServer(app);
 const io = initWebSocket(server);
+app.set("wss", io);
 
 const port = 3000;
 

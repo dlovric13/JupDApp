@@ -2,11 +2,14 @@ const express = require("express");
 const router = express.Router();
 const { onNewNotebookShared } = require("../middlewares/socketHandler");
 const { redisClient } = require("../redisSetup");
+const cron = require("node-cron");
+const { onAccessRemoved } = require("../middlewares/socketHandler");
 
 // Import the Hyperledger Fabric SDK and create a new Gateway instance
 const { Gateway, Wallets } = require("fabric-network");
 const path = require("path");
 const fs = require("fs");
+const { connect } = require("http2");
 const ccpPath = path.resolve(
   __dirname,
   "..",
@@ -84,6 +87,9 @@ async function manageAccess(req, res) {
   const action = req.params.action;
 
   try {
+    const expiryDate = req.body.expiryDate
+    console.log("Request body:", req.body); // New log statement
+    console.log("Expiry date:", expiryDate); // New log statement
     const walletPath = path.join(__dirname, "..", "wallet", "org1");
     const wallet = await Wallets.newFileSystemWallet(walletPath);
     console.log(`Wallet path: ${walletPath}`);
@@ -112,7 +118,8 @@ async function manageAccess(req, res) {
       "AccessContract:manageAccess",
       notebookId,
       userId,
-      action
+      action,
+      expiryDate
     );
     console.log(
       `Access request for notebook ID ${notebookId} and user ID ${userId} was ${action}`
@@ -249,7 +256,6 @@ async function removeAccess(req, res) {
       `Access for notebook ID ${notebookId} and user ID ${userId} was removed`
     );
     res.status(200).json({ message: "Access removed" });
-
     await gateway.disconnect();
   } catch (error) {
     console.error(`Failed to remove access: ${error}`);
@@ -313,6 +319,59 @@ async function toggleEditAccess(req, res) {
   }
 }
 
+
+
+cron.schedule("*/1 * * * *", async () => {
+  const walletPath = path.join(__dirname, "..", "wallet", "org1");
+  const wallet = await Wallets.newFileSystemWallet(walletPath);
+  const gateway = new Gateway();
+  await gateway.connect(ccp, {
+    wallet,
+    identity: "admin",
+    discovery: { enabled: true, asLocalhost: true },
+    timeout: gatewayTimeout,
+  });
+  const network = await gateway.getNetwork("mychannel");
+  const contract = network.getContract("digitalobject");
+
+  let notebooks = await contract.evaluateTransaction(
+    "NotebookContract:getAllNotebooks"
+  );
+  notebooks = JSON.parse(notebooks.toString());
+  console.log("Notebooks:", notebooks);
+  for (const notebook of notebooks) {
+    for (const user of notebook.Record.ACL.accessList) {
+      console.log(
+        "Checking access for notebook:",
+        notebook.Key,
+        "user:",
+        user.userId
+      ); 
+      const expiryCheckResponse = JSON.parse(
+        (
+          await contract.evaluateTransaction(
+            "AccessContract:checkExpiry",
+            notebook.Key,
+            user.userId
+          )
+        ).toString()
+      );
+      console.log("Expiry Check response:", expiryCheckResponse);
+      if (expiryCheckResponse.message === "Access expired") {
+        await contract.submitTransaction(
+          "AccessContract:removeAccess",
+          notebook.Key,
+          user.userId
+        );
+      onAccessRemoved(global.wss, {
+        notebookId: notebook.Key,
+        userId: user.userId,
+      });
+      }
+    }
+  }
+  await gateway.disconnect();
+});
 
 router.get("/get-edit-access/:notebookId/:userId", async (req, res) => {
   const { notebookId, userId } = req.params;

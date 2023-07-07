@@ -4,26 +4,6 @@ const router = express.Router();
 const config = require("../util/config");
 const jwt = require("jsonwebtoken");
 
-function isAuthenticated(req, res, next) {
-  const token = req.cookies.token;
-  console.log("Token in isAuthenticated:", token);
-  if (!token) {
-    return res.status(401).send("Access denied. No token provided.");
-  }
-
-  try {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (ex) {
-    res.status(400).send("Invalid token.");
-  }
-}
-
-router.get("/ping", (req, res) => {
-  res.status(200).send("pong");
-});
-
 
 router.get("/get-token", async (req, res) => {
   console.log("GET /get-token request received");
@@ -59,7 +39,6 @@ router.post("/register", async (req, res) => {
   } = req.body;
 
   try {
-    // You can add more validation logic here if needed
     if (!username || !email || !password || !organization) {
       res.status(400).send("Invalid input");
       return;

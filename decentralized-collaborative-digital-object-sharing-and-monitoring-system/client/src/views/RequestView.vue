@@ -132,8 +132,8 @@
                 </v-list-item-icon>
                 <v-list-item-content>{{ user.username }}</v-list-item-content>
                 <v-list-item-content class="v-list-item-content-edit">
-                <v-list-item-action>
-                  <!-- <v-btn-toggle>
+                  <v-list-item-action>
+                    <!-- <v-btn-toggle>
                   <v-btn color="green" @click="grantEditAccess(user)"
                     >Grant Edit Access</v-btn
                   >
@@ -141,13 +141,13 @@
                     >Remove Edit Access</v-btn
                   >
                 </v-btn-toggle> -->
-                  <v-checkbox
-                     v-model="user.hasEditAccess"
-                    label="Edit Access"
-                    color="green"
-                    @change="toggleEditAccess(user)"
-                  ></v-checkbox>
-                </v-list-item-action>
+                    <v-checkbox
+                      v-model="user.hasEditAccess"
+                      label="Edit Access"
+                      color="green"
+                      @change="toggleEditAccess(user)"
+                    ></v-checkbox>
+                  </v-list-item-action>
                 </v-list-item-content>
               </v-list-item>
             </v-list>
@@ -169,14 +169,28 @@
               </p>
             </v-card-text>
             <v-card-actions class="action-buttons">
-              <v-btn color="green" text @click="approveRequest(selectedRequest)"
-                >Approve</v-btn
-              >
-              <v-btn color="red" text @click="rejectRequest(selectedRequest)"
-                >Reject</v-btn
-              >
-              <v-spacer></v-spacer>
-              <v-btn color="primary" text @click="dialog = false">Close</v-btn>
+               <v-checkbox
+                  v-model="indefiniteAccess"
+                  label="Indefinite Access"
+                ></v-checkbox>
+              <div class="access-section" :class="{ 'datepicker-open': isDatePickerOpen }">
+                <VueDatePicker v-model="selectedDate" v-if="!indefiniteAccess" @open="openDatePicker" @close="closeDatePicker" />
+              </div>
+              <div class="action-section">
+                <v-btn
+                  color="green"
+                  text
+                  @click="approveRequest(selectedRequest)"
+                  >Approve</v-btn
+                >
+                <v-btn color="red" text @click="rejectRequest(selectedRequest)"
+                  >Reject</v-btn
+                >
+                <v-spacer></v-spacer>
+                <v-btn color="primary" text @click="dialog = false"
+                  >Close</v-btn
+                >
+              </div>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -189,9 +203,12 @@
 import SidebarVue from "../components/SidebarVue.vue";
 import axios from "axios";
 import Cookies from "js-cookie";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 export default {
   components: {
     SidebarVue,
+    VueDatePicker,
   },
   data() {
     return {
@@ -204,6 +221,9 @@ export default {
       selectedNotebook: null,
       selectedUser: null,
       selectedUserEdit: null,
+      selectedDate: new Date().toISOString().substr(0, 10),
+      indefiniteAccess: false,
+      isDatePickerOpen: false,
       pagination: {
         page: 1,
         rowsPerPage: 5,
@@ -243,8 +263,15 @@ export default {
     },
     async approveRequest(request) {
       try {
+        const expiryDate = this.indefiniteAccess 
+      ? '9999-12-31T23:59:59.000Z' 
+      : this.selectedDate;
         const response = await axios.post(
-          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/approve`
+          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/approve`,
+
+          {
+            expiryDate: expiryDate,
+          }
         );
         if (response.status === 200) {
           this.dialog = false;
@@ -383,11 +410,17 @@ export default {
     selectUser(user) {
       this.selectedUser = user;
       console.log("Selected user:", user);
-      // your logic here...
     },
     selectUserEdit(user) {
       this.selectedUserEdit = user;
       console.log("Selected user for edit:", user);
+    },
+
+    openDatePicker() {
+      this.isDatePickerOpen = true;
+    },
+    closeDatePicker() {
+      this.isDatePickerOpen = false;
     },
   },
   name: "RequestView",
@@ -432,10 +465,16 @@ export default {
 }
 
 .action-buttons {
-  display: flex;
-  justify-content: center;
+  display: block;
 }
 
+.datepicker-open {
+  padding-top: 100px;
+}
+
+.action-section {
+  display: flex;
+}
 .data-table {
   border-collapse: collapse;
   width: 100%;

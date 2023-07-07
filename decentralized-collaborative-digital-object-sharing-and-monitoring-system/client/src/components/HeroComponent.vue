@@ -4,12 +4,12 @@
       <v-col cols="12" lg="6">
         <div class="text-center">
           <h2 class="intro-text">
-            Welcome to our digital object sharing system
+            Welcome to our Decentralized Collaborative Digital Object Sharing and Monitoring System
           </h2>
           <p class="description">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit.
-            Necessitatibus eaque maxime debitis sequi aperiam? Aliquam laborum
-            eum quisquam natus in?
+           designed to revolutionize the way researchers and data scientists collaborate and share their work. 
+          Our system allows secure and decentralized sharing, editing, and tracking of Jupyter notebooks, 
+           backed by the robustness of Hyperledger Fabric.
           </p>
 
           <v-btn  @click="navigateToDashboard" elevation="6" class="text-white" color="#27a2f2" dark title
@@ -39,7 +39,7 @@
         ></v-img>
           <v-card-title class="headline mt-3">Collaboration</v-card-title>
           <v-card-text>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam viverra euismod odio, gravida pellentesque urna varius vitae.
+           This system enables multiple users to work simultaneously on shared Jupyter notebooks. It offers real-time tracking of changes, facilitating effective communication and collaboration in research projects.
           </v-card-text>
         </v-card>
       </v-col>
@@ -51,7 +51,7 @@
         ></v-img>
           <v-card-title class="headline mt-3">Security</v-card-title>
           <v-card-text>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam viverra euismod odio, gravida pellentesque urna varius vitae.
+           The system prioritizes data security, using the robustness of Hyperledger Fabric. It ensures that digital research objects are secure and tamper-resistant when shared.
           </v-card-text>
         </v-card>
       </v-col>
@@ -63,13 +63,13 @@
         ></v-img>
                     <v-card-title class="headline mt-3">Decentralization</v-card-title>
           <v-card-text>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam viverra euismod odio, gravida pellentesque urna varius vitae.
+            Adopting a decentralized structure, the system eliminates single points of failure and encourages shared data ownership. It guarantees resilience and reliability, crucial for collaborative research work
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-row class="my-5">
+    <!-- <v-row class="my-5">
       <v-col cols="12" class="text-center">
         <h3>Testimonials</h3>
       </v-col>
@@ -105,7 +105,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
   </v-container>
 </template>
 <script>

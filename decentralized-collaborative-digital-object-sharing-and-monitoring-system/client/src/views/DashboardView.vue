@@ -193,6 +193,21 @@ export default {
     });
     this.fetchUserRequests();
     console.log("On created", this.newRowKey);
+
+  socket.addEventListener("message", (event) => {
+    const message = JSON.parse(event.data);
+    if (message.event === "accessRemoved") {
+      const { notebookId, userId } = message.data;
+      if (userId === this.userId && this.requestedAccess[notebookId]) {
+        delete this.requestedAccess[notebookId];
+        localStorage.removeItem(`requestedAccess_${this.userId}`);
+        this.getNotebookData();
+      }
+    } else if (message.event === "newNotebookShared") {
+      this.getNotebookData();
+    }
+  });
+
   },
   computed: {
     filteredRows() {
