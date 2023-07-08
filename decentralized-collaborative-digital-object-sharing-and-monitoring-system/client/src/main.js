@@ -51,12 +51,22 @@ axios.interceptors.response.use(
   }
 );
 
+createApp(App).use(router).use(store).use(vuetify).mount("#app");
 
+function sendPing() {
+  axios
+    .get("http://localhost:3000/status/vue-ping")
+    .then((response) => {
+      console.log("Ping request successful:", response.data);
+    })
+    .catch((error) => {
+      console.error("Ping request failed:", error);
+    });
+}
+
+sendPing();
+setInterval(sendPing, 1 * 60 * 1000);
 
 loadFonts()
 
-createApp(App)
-  .use(router)
-  .use(store)
-  .use(vuetify)
-  .mount('#app')
+

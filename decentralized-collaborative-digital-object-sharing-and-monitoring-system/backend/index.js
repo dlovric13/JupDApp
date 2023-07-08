@@ -31,11 +31,13 @@ app.use(jwtMiddleware);
 const notebookRoutes = require("./routes/notebookRoutes")(io); 
 const authRoutes = require("./routes/authRoutes");
 const accessRoutes = require("./routes/accessRoutes");
+const serverStatusHandler = require("./routes/serverStatusRoutes");
 
 app.use("/notebook", notebookRoutes);
 app.use("/auth", authRoutes);
 app.use("/access", accessRoutes);
 app.use("/api", authRoutes);
+app.use("/status", serverStatusHandler);
 
 
 // Replace this line:

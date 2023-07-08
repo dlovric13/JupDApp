@@ -2,7 +2,7 @@
 import { ToolbarButton } from '@jupyterlab/apputils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
-import { IDisposable } from '@lumino/disposable';
+import { IDisposable, DisposableDelegate } from '@lumino/disposable';
 import { requestAPI } from './handler';
 import jwt_decode from 'jwt-decode';
 import * as CryptoJS from 'crypto-js';
@@ -26,10 +26,32 @@ export class ButtonExtension
       onClick: () => this.get_notebook(context)
     });
 
+    const statusButton = new ToolbarButton({
+      label: '',
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      onClick: () => {}
+    });
+
+    this.checkSystemStatus().then(status => {
+      if (status === 'green') {
+        statusButton.addClass('green-button');
+        statusButton.node.title = 'System is fully operational';
+        statusButton.node.textContent = 'System is fully operational';
+      } else {
+        statusButton.addClass('red-button');
+        statusButton.node.title = 'System is not fully operational';
+        statusButton.node.textContent = 'System is not fully operational';
+      }
+    });
+
     // Add the toolbar button to the notebook toolbar
     panel.toolbar.insertItem(10, 'mybutton', mybutton);
+    panel.toolbar.insertItem(11, 'statusButton', statusButton);
 
-    return mybutton;
+    return new DisposableDelegate(() => {
+      mybutton.dispose();
+      statusButton.dispose();
+    });
   }
 
   async createHash(input: string): Promise<string> {
@@ -139,7 +161,7 @@ export class ButtonExtension
         }
       }
     } else {
-      console.error('Failed to fetch token');
+      alert('You are not logged in. Please login to share the notebook.');
     }
   }
 
@@ -178,6 +200,44 @@ export class ButtonExtension
     });
 
     return socket;
+  }
+
+  async checkSystemStatus(): Promise<string> {
+    try {
+      const serverResponse = await fetch(
+        'http://localhost:3000/status/server-status',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        }
+      );
+      const serverStatus = await serverResponse.json();
+
+      const vueResponse = await fetch(
+        'http://localhost:3000/status/vue-status',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        }
+      );
+      const vueStatus = await vueResponse.json();
+      console.log('Vue status:', vueStatus);
+
+      if (serverStatus.status === 'running' && vueStatus.status === 'running') {
+        return 'green';
+      } else {
+        return 'red';
+      }
+    } catch (error) {
+      console.error('Failed to fetch system status:', error);
+      return 'red';
+    }
   }
 
   async shareNotebook(

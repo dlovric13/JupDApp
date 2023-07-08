@@ -3,3 +3,25 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+.green-button {
+    background-color: green;
+    color: white !important;
+    border: none !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    cursor: pointer !important;
+    margin-left: 5% !important
+}
+
+.red-button {
+    background-color: red;
+    color: white !important;
+    border: none !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    cursor: pointer !important;
+    margin-left: 5% !important;
+}

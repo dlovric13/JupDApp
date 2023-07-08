@@ -21,11 +21,11 @@ const jwtMiddleware = jwt({
     }
 
     console.log("Extracted token:", token);
-      if (token) {
-        const decoded = jwtDecode(token);
-        req.user = decoded;
-        console.log("Decoded token:", decoded);
-      }
+    if (token) {
+      const decoded = jwtDecode(token);
+      req.user = decoded;
+      console.log("Decoded token:", decoded);
+    }
     console.log("Decoded token:", jwtDecode(token));
     return token;
   },
@@ -35,7 +35,9 @@ const jwtMiddleware = jwt({
     "/api/get-token",
     "/api/store-token",
     "/auth/register",
-    "/api/ping",
+    "/status/server-status",
+    "/status/vue-ping", 
+    "/status/vue-status"
   ],
 });
 
