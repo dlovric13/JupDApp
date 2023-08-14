@@ -108,5 +108,11 @@
         "jlpm clean:all"
       ]
     }
-  }
+  },
+  "resolutions": {
+   "@lumino/coreutils": "1.11.0",
+    "@lumino/messaging": "1.10.0",
+    "@lumino/signaling": "1.10.0",
+    "@lumino/widgets": "1.37.2"
+}
 }

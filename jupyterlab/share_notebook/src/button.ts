@@ -252,6 +252,7 @@ export class ButtonExtension
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const socket = this.createWebSocketConnection(token);
+        console.log('Notebook data from Jupyter server', data);
       })
       .catch(reason => {
         console.error(

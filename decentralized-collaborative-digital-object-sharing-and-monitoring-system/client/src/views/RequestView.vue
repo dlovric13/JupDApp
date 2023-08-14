@@ -169,12 +169,20 @@
               </p>
             </v-card-text>
             <v-card-actions class="action-buttons">
-               <v-checkbox
-                  v-model="indefiniteAccess"
-                  label="Indefinite Access"
-                ></v-checkbox>
-              <div class="access-section" :class="{ 'datepicker-open': isDatePickerOpen }">
-                <VueDatePicker v-model="selectedDate" v-if="!indefiniteAccess" @open="openDatePicker" @close="closeDatePicker" />
+              <v-checkbox
+                v-model="indefiniteAccess"
+                label="Indefinite Access"
+              ></v-checkbox>
+              <div
+                class="access-section"
+                :class="{ 'datepicker-open': isDatePickerOpen }"
+              >
+                <VueDatePicker
+                  v-model="selectedDate"
+                  v-if="!indefiniteAccess"
+                  @open="openDatePicker"
+                  @close="closeDatePicker"
+                />
               </div>
               <div class="action-section">
                 <v-btn
@@ -263,9 +271,9 @@ export default {
     },
     async approveRequest(request) {
       try {
-        const expiryDate = this.indefiniteAccess 
-      ? '9999-12-31T23:59:59.000Z' 
-      : this.selectedDate;
+        const expiryDate = this.indefiniteAccess
+          ? "9999-12-31T23:59:59.000Z"
+          : this.selectedDate;
         const response = await axios.post(
           `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/approve`,
 
@@ -288,7 +296,10 @@ export default {
     async rejectRequest(request) {
       try {
         const response = await axios.post(
-          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/reject`
+          `http://localhost:3000/access/${request.id}/manage-access/${request.userId}/reject`,
+          {
+            expiryDate: "1970-01-01T00:00:00.000Z", // Dummy expiry date for reject action
+          }
         );
         if (response.status === 200) {
           this.dialog = false;

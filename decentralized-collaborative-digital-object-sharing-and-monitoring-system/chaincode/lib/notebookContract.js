@@ -120,6 +120,7 @@ class NotebookContract extends Contract {
   async initializeLedger(ctx) {
     const notebook = {
       name: "Untitled8.ipynb",
+      owner: "John Doe",
       path: "Untitled8.ipynb",
       last_modified: "2023-03-10T15:25:33.687246Z",
       created: "2023-03-10T15:25:33.687246Z",
