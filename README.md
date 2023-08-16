@@ -13,7 +13,7 @@
 
 ## Prerequisites
 
-1. Before installing the Hyperledger fabric binaries you will need to install the following prerequisites to be able to run a docker-based fabric test network. The installation steps for the prerequsities can be found on the following link: ![image](https://github.com/dlovric13/JupDApp/assets/47255927/814140a2-a3fe-4e27-b582-bc51f12e6e49)
+1. Before installing the Hyperledger fabric binaries you will need to install the following prerequisites to be able to run a docker-based fabric test network. The installation steps for the prerequsities can be found on the following link:
  [here](https://hyperledger-fabric.readthedocs.io/en/release-2.4/prereqs.html).
 
 2. Node is required for the Hyperledger fabric test network. This project used version `v16.20.1` which works with Hyperledger fabric `v2.4`. To install:
